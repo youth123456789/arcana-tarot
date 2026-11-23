@@ -2,30 +2,20 @@ services:
   - type: web
     name: arcana
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: APP_SECRET
         generateValue: true
-      - key: DB_PATH
-        value: /data/arcana.db
-      - key: MAIL_MODE
-        value: smtp
-      - key: SMTP_HOST
-        value: smtp.qq.com
-      - key: SMTP_PORT
-        value: "465"
-      - key: SMTP_SECURE
-        value: "true"
-      - key: SMTP_USER
+      - key: DATABASE_URL
         sync: false
-      - key: SMTP_PASS
+      - key: MAIL_MODE
+        value: smtp2go
+      - key: SMTP2GO_API_KEY
+        sync: false
+      - key: MAIL_FROM
         sync: false
       - key: CORS_ORIGINS
         value: https://localhost,capacitor://localhost
-    disk:
-      name: arcana-data
-      mountPath: /data
-      sizeGB: 1

@@ -105,7 +105,7 @@ function configFor(providerBaseUrl) {
 }
 
 async function startApp(config, db, mailer) {
-  const app = createApp(config, { db, mailer });
+  const app = await createApp(config, { db, mailer });
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.on('listening', resolve));
   return { app, server, baseUrl: `http://127.0.0.1:${server.address().port}` };
@@ -126,7 +126,7 @@ async function request(baseUrl, method, url, body, token) {
 }
 
 test('account, API keys and starred reading work end to end', async (t) => {
-  const db = createDatabase(':memory:');
+  const db = await createDatabase(':memory:');
   let capturedCode = '';
   const mailer = {
     mode: 'test',
@@ -137,10 +137,10 @@ test('account, API keys and starred reading work end to end', async (t) => {
   const fake = await startFakeProvider();
   const config = configFor(fake.baseUrl);
   const app = await startApp(config, db, mailer);
-  t.after(() => {
+  t.after(async () => {
     app.server.close();
     fake.server.close();
-    db.close();
+    await db.close();
   });
 
   const unauthorized = await request(app.baseUrl, 'GET', '/api/auth/me');
@@ -187,7 +187,7 @@ test('account, API keys and starred reading work end to end', async (t) => {
   assert.equal(firstKey.response.status, 201);
   assert.equal(firstKey.data.key.starred, true);
   assert.equal(firstKey.data.key.status, 'connected');
-  const stored = db.prepare('SELECT key_encrypted FROM api_keys WHERE id = ?').get(firstKey.data.key.id);
+  const stored = await db.one('SELECT key_encrypted FROM api_keys WHERE id = ?', [firstKey.data.key.id]);
   assert.equal(stored.key_encrypted.includes('sk-good-key-123'), false);
 
   const updated = await request(app.baseUrl, 'PUT', `/api/keys/${firstKey.data.key.id}`, {
@@ -210,7 +210,7 @@ test('account, API keys and starred reading work end to end', async (t) => {
   const starred = await request(app.baseUrl, 'PUT', `/api/keys/${secondKey.data.key.id}/star`, undefined, token);
   assert.equal(starred.response.status, 200);
   assert.equal(starred.data.key.starred, true);
-  const starredRows = db.prepare('SELECT COUNT(*) AS count FROM api_keys WHERE user_id = 1 AND starred = 1').get();
+  const starredRows = await db.one('SELECT COUNT(*) AS count FROM api_keys WHERE user_id = 1 AND starred = 1');
   assert.equal(Number(starredRows.count), 1);
 
   const reading = await request(app.baseUrl, 'POST', '/api/readings', readingRequest(), token);
@@ -264,13 +264,13 @@ test('account, API keys and starred reading work end to end', async (t) => {
 });
 
 test('CORS allows the Capacitor origin and Authorization header', async (t) => {
-  const db = createDatabase(':memory:');
+  const db = await createDatabase(':memory:');
   const fake = await startFakeProvider();
   const app = await startApp(configFor(fake.baseUrl), db, { mode: 'test', async sendCode() {} });
-  t.after(() => {
+  t.after(async () => {
     app.server.close();
     fake.server.close();
-    db.close();
+    await db.close();
   });
 
   const preflight = await fetch(`${app.baseUrl}/api/readings`, {

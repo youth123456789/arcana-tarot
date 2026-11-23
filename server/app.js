@@ -9,11 +9,11 @@ const { createAuthRouter } = require('./routes/auth');
 const { createKeysRouter } = require('./routes/keys');
 const { createReadingsRouter } = require('./routes/readings');
 
-function createApp(config, dependencies = {}) {
+async function createApp(config, dependencies = {}) {
   const app = express();
   app.disable('x-powered-by');
 
-  const db = dependencies.db || createDatabase(config.dbPath);
+  const db = (dependencies.db ? await dependencies.db : null) || await createDatabase(config.databaseUrl || config.dbPath);
   const mailer = dependencies.mailer || createMailer(config);
   app.locals.db = db;
   app.locals.mailer = mailer;
@@ -52,7 +52,7 @@ function createApp(config, dependencies = {}) {
       service: 'arcana',
       auth: { mode: 'email-code', domains: config.auth.allowedEmailDomains },
       mail: { mode: mailer.mode || config.mail.mode },
-      storage: 'sqlite'
+      storage: db.kind === 'postgres' ? 'postgres' : 'sqlite'
     });
   });
 

@@ -16,7 +16,7 @@ function createReadingsRouter({ config, db }) {
     let keyRow = null;
     try {
       input = validateReadingRequest(request.body);
-      keyRow = getStarredKey(db, request.user.id);
+      keyRow = await getStarredKey(db, request.user.id);
       if (!keyRow) {
         response.status(409).json({
           error: {
@@ -28,7 +28,7 @@ function createReadingsRouter({ config, db }) {
       }
 
       const result = await generateReading(input, config, keyRow);
-      markKeyStatus(db, keyRow.id, 'connected', '');
+      await markKeyStatus(db, keyRow.id, 'connected', '');
       response.set('Cache-Control', 'no-store');
       response.set('X-Request-Id', result.requestId);
       response.status(200).json(result);
@@ -43,7 +43,7 @@ function createReadingsRouter({ config, db }) {
       }));
     } catch (error) {
       if (keyRow && /^PROVIDER_/.test(String(error.code || ''))) {
-        markKeyStatus(db, keyRow.id, 'error', error.message);
+        await markKeyStatus(db, keyRow.id, 'error', error.message);
       }
       if (input) {
         console.warn('[reading:error]', JSON.stringify({

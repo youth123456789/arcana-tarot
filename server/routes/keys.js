@@ -23,12 +23,16 @@ function createKeysRouter({ config, db }) {
     response.json({ providers: publicProviders() });
   });
 
-  router.get('/', auth, (request, response) => {
-    const keys = listKeys(db, request.user.id);
-    response.json({
-      keys,
-      activeKeyId: (keys.find((key) => key.starred) || {}).id || null
-    });
+  router.get('/', auth, async (request, response, next) => {
+    try {
+      const keys = await listKeys(db, request.user.id);
+      response.json({
+        keys,
+        activeKeyId: (keys.find((key) => key.starred) || {}).id || null
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   router.post('/', auth, limiter, async (request, response, next) => {
@@ -93,9 +97,9 @@ function createKeysRouter({ config, db }) {
     }
   });
 
-  router.delete('/:id', auth, limiter, (request, response, next) => {
+  router.delete('/:id', auth, limiter, async (request, response, next) => {
     try {
-      const result = deleteKey(db, request.user.id, request.params.id);
+      const result = await deleteKey(db, request.user.id, request.params.id);
       response.json(result);
     } catch (error) {
       next(error);

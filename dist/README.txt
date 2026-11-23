@@ -20,7 +20,7 @@ Install:
 
 Backend setup:
 See ../README.md and ../docs/ANDROID.md.
-The server must have QQ Mail SMTP configured for real email codes.
+The server must have SMTP2GO (free Render path) or QQ Mail SMTP configured for real email codes.
 For local testing, the debug APK can use http://<computer-LAN-IP>:4173,
 but a phone-only install should use a deployed HTTPS backend.
 

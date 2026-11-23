@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node test/api.test.js",
+    "test": "node test/api.test.js && node test/postgres.test.js && node test/mail.test.js",
     "build:web": "node scripts/build-web.mjs",
     "android:sync": "node scripts/build-web.mjs && npx cap sync android",
     "android:open": "npm run build:web && npx cap sync android && npx cap open android",
@@ -21,12 +21,14 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "nodemailer": "^6.10.1"
+    "nodemailer": "^6.10.1",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/assets": "^4.0.0",
     "@capacitor/cli": "^7.0.0",
-    "@capacitor/core": "^7.0.0"
+    "@capacitor/core": "^7.0.0",
+    "pg-mem": "^3.0.14"
   }
 }

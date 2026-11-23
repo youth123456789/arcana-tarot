@@ -18,10 +18,10 @@ function createAuthRouter({ config, db, mailer }) {
     }
   });
 
-  router.post('/verify-code', codeLimiter, (request, response, next) => {
+  router.post('/verify-code', codeLimiter, async (request, response, next) => {
     try {
       const body = request.body || {};
-      const result = verifyCode(db, config, body.email, body.code);
+      const result = await verifyCode(db, config, body.email, body.code);
       response.json({ ok: true, ...result });
     } catch (error) {
       next(error);
@@ -32,9 +32,13 @@ function createAuthRouter({ config, db, mailer }) {
     response.json({ user: request.user });
   });
 
-  router.post('/logout', requireAuth(db), (request, response) => {
-    revokeSession(db, request.token);
-    response.status(204).end();
+  router.post('/logout', requireAuth(db), async (request, response, next) => {
+    try {
+      await revokeSession(db, request.token);
+      response.status(204).end();
+    } catch (error) {
+      next(error);
+    }
   });
 
   return router;

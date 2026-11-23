@@ -1,110 +1,209 @@
-# 后端部署完整步骤
+# 免费部署完整步骤
 
-当前功能要求一个**可公网访问的后端**，因为：
+目标：**不买域名、不买服务器**，尽量只使用免费层（是否要求绑定付款方式以平台当时政策为准）。
 
-- QQ 邮箱验证码必须由服务端 SMTP 发出；
-- 用户的 API Key 不能保存在 APK 里；
-- 多个朋友共用一个后端时，账号和 Key 需要按用户隔离。
+架构：
 
-好消息是：**只需要部署一次**。部署完成后，朋友只安装 APK，用 QQ 邮箱注册即可，不需要各自部署。
+```text
+Android APK
+   ↓ HTTPS
+Render Free Web Service
+   ├── Supabase Free Postgres：账号、Session、加密 API Key
+   └── SMTP2GO Free HTTPS API：QQ 邮箱验证码
+```
+
+所需账号：
+
+- GitHub（仓库已有）
+- Render
+- Supabase
+- SMTP2GO
+
+三个平台都有免费层。免费层有休眠/暂停/额度限制，但数据能持久保存。
 
 ---
 
-## 费用与域名
+## 为什么不直接用 Render 免费 + QQ SMTP
 
-- **不需要买域名**：Render 会提供一个 `https://你的服务名.onrender.com` 地址，自带 HTTPS。
-- **不需要买服务器**：Render 负责运行 Docker 容器。
-- 但 SQLite 需要持久磁盘，Render 的免费 Web Service 不能挂载磁盘，重启/重新部署会丢数据。因此要长期给朋友使用，建议用付费的 Starter 实例。
-- 参考价格（以 Render 控制台实际显示为准）：Starter Web Service 约 7 美元/月，持久磁盘 0.25 美元/GB/月；1 GB 磁盘合计约 7.25 美元/月。价格可能调整，详见 [Render Pricing](https://render.com/pricing)。
-- QQ SMTP 本身免费；朋友使用自己的 API Key，模型费用由各自承担。
+Render 免费 Web Service 有两个硬限制：
 
-**完全没有预算时**：可以先用 Render 免费 Web Service 走通流程，但账号和 API Key 会在重启后丢失，只能测试；或者改用免费云服务器 + 外部 Postgres（需要改造数据库层），或本地电脑临时运行（不能脱离电脑）。不建议把免费临时方案直接给朋友长期用。
+1. 不能挂持久磁盘，SQLite 重启会丢数据；
+2. 封锁 SMTP 出站端口 25 / 465 / 587，QQ SMTP 发不出验证码。
 
-## 方案 A：Render（推荐，最少运维）
+参考：[Render 公告](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports)
 
-需要：
+所以免费方案必须：
 
-- GitHub 账号
-- Render 账号
-- 一个 QQ 邮箱的 SMTP 授权码
-- Render 的付费实例（SQLite 需要持久磁盘，免费实例不适合）
+- 用 Supabase Postgres 代替 SQLite；
+- 用 SMTP2GO HTTPS API 代替 QQ SMTP。
 
-### 1. 把项目推到 GitHub
+代码已经支持这两种模式。
+
+---
+
+## 第 0 步：把最新代码推到 GitHub
+
+Render 构建的是 GitHub 上的代码，不是本机文件。先确认仓库已经包含最新的：
+
+- `server/db.js`（Postgres 支持）
+- `server/mail.js`（SMTP2GO 支持）
+- `render.yaml`（`plan: free`，无磁盘）
 
 在项目根目录执行：
 
 ```bash
-git init
+git status
 git add .
-git commit -m "ARCANA 0.4"
-git branch -M main
-git remote add origin https://github.com/你的用户名/arcana-tarot.git
-git push -u origin main
+git commit -m "ARCANA free backend"
+git push origin main
 ```
 
-> `.env`、`node_modules`、`data/`、APK 工作目录已经被 `.gitignore` 排除。不要提交任何 API Key 或 SMTP 授权码。
+如果仓库还是旧版，Render 会按旧版启动，免费方案会失败。
 
-### 2. 在 Render 创建 Blueprint
+## 第 1 步：创建 Supabase 数据库
 
-1. 登录 [Render](https://render.com/)；
-2. Dashboard → **New +** → **Blueprint**；
-3. 选择刚才的 GitHub 仓库；
-4. Render 会自动读取仓库根目录的 [`render.yaml`](../render.yaml)；
-5. 点击 **Apply**。
+1. 打开 <https://supabase.com/>，用 GitHub 登录；
+2. **New project**；
+3. 名称随意，例如 `arcana`；
+4. 区域选 **Southeast Asia (Singapore)** 或日本；
+5. 设置数据库密码并保存好；
+6. 等待项目初始化完成。
 
-`render.yaml` 会创建：
+### 获取连接串
 
-- 一个 Docker Web Service；
-- 一个 1 GB 持久磁盘，挂载到 `/data`；
-- `APP_SECRET` 自动生成；
-- `DB_PATH=/data/arcana.db`；
-- `MAIL_MODE=smtp`；
-- 健康检查 `/api/health`。
-
-### 3. 填写 SMTP 密钥
-
-在 Render 服务的 **Environment** 中填写：
+进入项目：
 
 ```text
-SMTP_USER=你的QQ邮箱@qq.com
-SMTP_PASS=QQ邮箱SMTP授权码
+Connect → Session Pooler
 ```
 
-QQ 邮箱授权码获取：
+复制 **Session Pooler** 的连接串，不要用 Direct Connection。Render 的网络环境更适合 Pooler，而且 Direct Connection 可能只有 IPv6。
 
-1. 登录 QQ 邮箱网页版；
-2. 设置 → 账户；
-3. 开启「POP3/IMAP/SMTP 服务」；
-4. 生成授权码；
-5. 把授权码填到 `SMTP_PASS`，不要填 QQ 登录密码。
+连接串类似：
 
-`SMTP_HOST=smtp.qq.com`、`SMTP_PORT=465`、`SMTP_SECURE=true` 已经在模板里。
+```text
+postgresql://postgres.xxxx:你的密码@aws-0-region.pooler.supabase.com:5432/postgres
+```
 
-### 4. 等待部署并拿到 URL
+如果密码包含 `@`、`#`、`/` 等字符，要在连接串里做 URL 编码，或改用只含字母数字的密码。
 
-部署完成后，Render 会给出类似：
+> 第一次启动后端时会自动建表，不需要手动执行 SQL。
+
+免费项目连续 7 天无活动会暂停。暂停后打开 Supabase Dashboard 点 **Restore**，再访问 App 即可。
+
+---
+
+## 第 2 步：创建 SMTP2GO 邮件账号
+
+QQ 邮箱不能作为 Brevo 的发件人，因为 Brevo 要求对自有域名做认证，免费邮箱域名无法通过。  
+SMTP2GO 的免费计划允许添加单个发件邮箱，适合只有 QQ 邮箱的情况。
+
+1. 打开 <https://www.smtp2go.com/>，免费注册；
+2. 进入 Senders；
+3. 添加你的 QQ 邮箱作为 single sender；
+4. 去 QQ 邮箱收验证码并完成验证；
+5. 进入 API Keys；
+6. 创建一个 API Key 并保存。
+
+免费额度约 1000 封/月、200 封/天。
+
+关键配置：
+
+```dotenv
+MAIL_MODE=smtp2go
+SMTP2GO_API_KEY=你的 SMTP2GO API Key
+MAIL_FROM=你的QQ邮箱@qq.com
+```
+
+`MAIL_FROM` 必须是 SMTP2GO 里已验证的发件邮箱，否则 API 会拒绝。
+
+---
+
+## 第 3 步：Render 创建免费服务
+
+1. 打开 <https://dashboard.render.com/>；
+2. 用 GitHub 登录；
+3. 点 **New + → Blueprint**；
+4. 选择仓库：
+
+```text
+youth123456789/arcana-tarot
+```
+
+5. Branch 选 `main`；
+6. Render 自动读取仓库根目录的 `render.yaml`；
+7. 确认服务配置：
+
+```text
+Name: arcana
+Runtime: Docker
+Plan: Free
+Health Check: /api/health
+Disk: 无
+```
+
+8. 填写环境变量：
+
+```text
+DATABASE_URL=第 1 步的 Supabase Session Pooler 连接串
+SMTP2GO_API_KEY=第 2 步的 SMTP2GO API Key
+MAIL_FROM=你的QQ邮箱@qq.com
+```
+
+`APP_SECRET` 会自动生成，不要手动改。改了以后已经保存的 API Key 会解不开。
+
+9. 点 **Apply** 或 **Deploy**。
+
+> 如果 Blueprint 没有自动识别：
+>
+> **New + → Web Service** → 选择仓库 → Runtime 选 **Docker** → Plan 选 **Free** → Health Check 填 `/api/health` → 添加上面的环境变量。
+
+Render 免费计划通常不需要付款方式；如果页面要求绑卡，以 Render 当时的政策为准。不要选 Starter，否则会产生费用。
+
+---
+
+## 第 4 步：验证部署
+
+部署完成后，Render 会给一个地址：
 
 ```text
 https://arcana-xxxx.onrender.com
 ```
 
-验证：
+浏览器打开：
 
-```bash
-curl https://arcana-xxxx.onrender.com/api/health
+```text
+https://arcana-xxxx.onrender.com/api/health
 ```
 
-返回 `ok: true`、`mail.mode: smtp`、`storage: sqlite` 即正常。
+预期返回：
 
-### 5. 手机连接
+```json
+{
+  "ok": true,
+  "service": "arcana",
+  "mail": { "mode": "smtp2go" },
+  "storage": "postgres"
+}
+```
 
-1. 安装 `dist/arcana-0.4.0-debug.apk`；
-2. 打开首页右上角头像；
-3. 点「服务地址」，填入上面的 HTTPS URL；
-4. 用 QQ 邮箱获取验证码并登录；
-5. 进入 API 配置，添加并星标自己的 API Key。
+如果 `storage` 是 `sqlite`，说明 `DATABASE_URL` 没生效；  
+如果 `mail.mode` 是 `smtp`，说明 `MAIL_MODE` 没生效。
 
-如果想让朋友完全不用填地址，可以在构建 APK 时写入：
+免费实例闲置约 15 分钟后会休眠。第一次访问可能需要等 30–60 秒，这是正常现象。
+
+---
+
+## 第 5 步：连接手机
+
+1. 安装 APK；
+2. 头像 → 服务地址；
+3. 填 Render 的 HTTPS 地址；
+4. 用 QQ 邮箱获取验证码；
+5. 添加 API Key，点击星标；
+6. 开始解读。
+
+如果想让朋友完全不用填地址，构建 APK 时写入：
 
 ```powershell
 $env:ARCANA_API_BASE_URL="https://arcana-xxxx.onrender.com"
@@ -113,144 +212,70 @@ npm run android:debug
 
 ---
 
-## 方案 B：自己的 VPS / 云服务器
+## 常见问题
 
-需要：
+### 验证码一直收不到
 
-- 一台 Ubuntu 22.04/24.04 云服务器；
-- 一个域名（用于 HTTPS）；
-- 开放 80/443 端口；
-- QQ 邮箱 SMTP 授权码。
+检查：
 
-### 1. 安装 Docker
+- SMTP2GO 的 sender 是否已验证；
+- `MAIL_FROM` 是否和已验证 sender 完全一致；
+- `SMTP2GO_API_KEY` 是否正确；
+- SMTP2GO 免费额度是否用完；
+- Render 日志里是否出现 `SMTP2GO HTTP 401/400`。
 
-```bash
-sudo apt update
-sudo apt install -y docker.io
-sudo systemctl enable --now docker
-```
+### Render 日志报数据库连接失败
 
-### 2. 拉取项目
+- 确认用的是 **Session Pooler**，不是 Direct Connection；
+- 确认 Supabase 项目没有暂停；
+- 密码里的特殊字符是否做了 URL 编码；
+- 连接串是否包含 `postgresql://`。
 
-```bash
-git clone https://github.com/你的用户名/arcana-tarot.git
-cd arcana-tarot
-```
+### Render 免费实例很慢
 
-### 3. 配置环境变量
+免费实例会休眠，第一次请求需要唤醒。可以接受就继续用；不能接受再升级 Render Starter（约 $7/月），代码不需要改。
 
-```bash
-cp .env.example .env
-nano .env
-```
+### Supabase 免费项目暂停
 
-至少改成：
+登录 Supabase Dashboard，恢复项目，然后重新访问 Render 地址。
 
-```dotenv
-NODE_ENV=production
-APP_SECRET=64位随机字符串
-DB_PATH=/data/arcana.db
-MAIL_MODE=smtp
-SMTP_HOST=smtp.qq.com
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=你的QQ邮箱@qq.com
-SMTP_PASS=QQ邮箱SMTP授权码
-CORS_ORIGINS=https://localhost,capacitor://localhost
-```
+### Render 免费实例能挂磁盘吗
 
-生成 `APP_SECRET`：
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-### 4. 构建并运行
-
-```bash
-docker build -t arcana .
-docker volume create arcana-data
-docker run -d \
-  --name arcana \
-  --restart unless-stopped \
-  -p 127.0.0.1:4173:4173 \
-  -v arcana-data:/data \
-  --env-file .env \
-  arcana
-```
-
-### 5. 配置 HTTPS
-
-用 Caddy 最简单：
-
-```bash
-sudo apt install -y caddy
-sudo nano /etc/caddy/Caddyfile
-```
-
-写入：
-
-```text
-api.你的域名.com {
-    reverse_proxy 127.0.0.1:4173
-}
-```
-
-```bash
-sudo systemctl reload caddy
-```
-
-把域名的 A 记录指向服务器公网 IP，等待证书自动签发。然后：
-
-```bash
-curl https://api.你的域名.com/api/health
-```
+不能。当前方案已经用 Supabase 代替磁盘，不需要磁盘。
 
 ---
 
-## 方案 C：本机临时测试
+## 免费方案的限制
 
-只适合测试，不适合朋友使用：
-
-```bash
-npm install
-copy .env.example .env
-npm start
-```
-
-Debug APK 可以填：
-
-```text
-http://电脑局域网IP:4173
-```
-
-需要手机和电脑在同一 Wi-Fi，Windows 防火墙放行 4173。这个方案依赖电脑开着，不能做到「只用手机」。
+- Render 免费：休眠、冷启动、512 MB 内存；
+- Supabase 免费：500 MB 数据库，7 天不活动暂停；
+- SMTP2GO 免费：约 1000 封/月；
+- 限流在单实例内存里，适合小范围朋友；
+- 不适合大量公开用户或商业运营。
 
 ---
 
-## 不部署，可以吗？
+## 如果以后想花钱升级
 
-如果保留以下功能，**不可以**：
+最简单：
 
-- QQ 邮箱验证码登录；
-- 多用户账号；
-- 服务端加密保存 API Key；
-- 统一调用服务商 API。
+- Render 升到 Starter；
+- Render 加 1 GB 持久磁盘；
+- 数据库可以继续用 Supabase，也可以切回 SQLite；
+- QQ SMTP 可用，但当前 SMTP2GO 也可以继续用。
 
-这些都必须有可信服务端。可以做的替代方案是大幅削减功能：
-
-- 取消邮箱登录，只做本机单用户；
-- 把 API Key 存在手机本地；
-- 由手机直接请求服务商（部分服务商可能因 CORS 或安全策略失败）。
-
-这会变成另一个产品，而且安全性、兼容性都更差，不推荐现在这样做。
+代码不需要改，只改环境变量和 Render 套餐。
 
 ---
 
-## 朋友共用时的边界
+## 不部署可以吗
 
-- 账号按 `user_id` 隔离，API Key 加密保存，朋友看不到彼此的 Key。
-- 每个朋友使用自己的 API Key，模型费用各自承担。
-- 邮件从你的 QQ 邮箱发出；朋友多时注意发送限制。
-- 你作为服务端管理员持有 `APP_SECRET` 和数据库，建议只给信任的人使用。
-- 目前没有邀请码；任何拿到后端 URL 的人都能注册。若要严格控制，需要后续加白名单。
+如果保留 QQ 邮箱登录、服务端保存 Key、多用户隔离，就必须有后端。
+
+可以放弃的功能：
+
+- 取消邮箱登录；
+- Key 只存在手机本地；
+- 手机直接请求服务商。
+
+这会变成另一个单机产品，兼容性和安全性都更差，不推荐。

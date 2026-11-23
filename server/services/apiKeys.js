@@ -21,24 +21,28 @@ function rowWithProvider(row) {
   };
 }
 
-function listKeys(db, userId) {
-  return db.prepare(
-    'SELECT * FROM api_keys WHERE user_id = ? ORDER BY starred DESC, created_at DESC'
-  ).all(userId).map(rowWithProvider);
+async function listKeys(db, userId) {
+  const rows = await db.query(
+    'SELECT * FROM api_keys WHERE user_id = ? ORDER BY starred DESC, created_at DESC',
+    [userId]
+  );
+  return rows.map(rowWithProvider);
 }
 
-function getKeyRow(db, userId, id) {
-  return db.prepare('SELECT * FROM api_keys WHERE id = ? AND user_id = ?').get(id, userId);
+async function getKeyRow(db, userId, id) {
+  return db.one('SELECT * FROM api_keys WHERE id = ? AND user_id = ?', [id, userId]);
 }
 
-function getStarredKey(db, userId) {
-  return db.prepare('SELECT * FROM api_keys WHERE user_id = ? AND starred = 1').get(userId);
+async function getStarredKey(db, userId) {
+  return db.one('SELECT * FROM api_keys WHERE user_id = ? AND starred = 1', [userId]);
 }
 
-function updateTestState(db, id, status, errorMessage) {
-  db.prepare(
-    'UPDATE api_keys SET status = ?, last_checked_at = ?, last_error = ?, updated_at = ? WHERE id = ?'
-  ).run(status, Date.now(), String(errorMessage || '').slice(0, 300), Date.now(), id);
+async function updateTestState(db, id, status, errorMessage) {
+  const now = Date.now();
+  await db.execute(
+    'UPDATE api_keys SET status = ?, last_checked_at = ?, last_error = ?, updated_at = ? WHERE id = ?',
+    [status, now, String(errorMessage || '').slice(0, 300), now, id]
+  );
 }
 
 function providerTestError(error) {
@@ -71,7 +75,7 @@ async function createKey(db, config, userId, input) {
     throw new HttpError(422, 'KEY_REQUIRED', '请填写有效的 API Key。');
   }
 
-  const existingCount = db.prepare('SELECT COUNT(*) AS count FROM api_keys WHERE user_id = ?').get(userId);
+  const existingCount = await db.one('SELECT COUNT(*) AS count FROM api_keys WHERE user_id = ?', [userId]);
   if (Number(existingCount.count) >= 20) {
     throw new HttpError(422, 'KEY_LIMIT', '每个账号最多保存 20 个 API 配置。');
   }
@@ -84,33 +88,34 @@ async function createKey(db, config, userId, input) {
   }
 
   const now = Date.now();
-  const hasStar = Boolean(getStarredKey(db, userId));
+  const hasStar = Boolean(await getStarredKey(db, userId));
   const encrypted = encryptSecret(apiKey, config.appSecret);
-  const info = db.prepare(
+  const id = await db.insert(
     'INSERT INTO api_keys (user_id, provider, model, key_encrypted, key_tail, starred, status, last_checked_at, last_error, created_at, updated_at) ' +
-    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    userId,
-    provider.id,
-    model,
-    encrypted,
-    maskKey(apiKey),
-    hasStar ? 0 : 1,
-    'connected',
-    now,
-    '',
-    now,
-    now
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      userId,
+      provider.id,
+      model,
+      encrypted,
+      maskKey(apiKey),
+      hasStar ? 0 : 1,
+      'connected',
+      now,
+      '',
+      now,
+      now
+    ]
   );
 
   return {
-    key: rowWithProvider(getKeyRow(db, userId, info.lastInsertRowid)),
+    key: rowWithProvider(await getKeyRow(db, userId, id)),
     test
   };
 }
 
 async function updateKey(db, config, userId, id, input) {
-  const row = getKeyRow(db, userId, id);
+  const row = await getKeyRow(db, userId, id);
   if (!row) throw new HttpError(404, 'KEY_NOT_FOUND', '没有找到这个 API 配置。');
 
   const provider = getProvider(input && input.provider);
@@ -134,96 +139,90 @@ async function updateKey(db, config, userId, id, input) {
   }
 
   const now = Date.now();
-  db.prepare(
-    'UPDATE api_keys SET provider = ?, model = ?, key_encrypted = ?, key_tail = ?, status = ?, last_checked_at = ?, last_error = ?, updated_at = ? WHERE id = ? AND user_id = ?'
-  ).run(
-    provider.id,
-    model,
-    newApiKey ? encryptSecret(apiKey, config.appSecret) : row.key_encrypted,
-    newApiKey ? maskKey(apiKey) : row.key_tail,
-    'connected',
-    now,
-    '',
-    now,
-    id,
-    userId
+  await db.execute(
+    'UPDATE api_keys SET provider = ?, model = ?, key_encrypted = ?, key_tail = ?, status = ?, last_checked_at = ?, last_error = ?, updated_at = ? WHERE id = ? AND user_id = ?',
+    [
+      provider.id,
+      model,
+      newApiKey ? encryptSecret(apiKey, config.appSecret) : row.key_encrypted,
+      newApiKey ? maskKey(apiKey) : row.key_tail,
+      'connected',
+      now,
+      '',
+      now,
+      id,
+      userId
+    ]
   );
 
   return {
-    key: rowWithProvider(getKeyRow(db, userId, id)),
+    key: rowWithProvider(await getKeyRow(db, userId, id)),
     test
   };
 }
 
 async function testKey(db, config, userId, id) {
-  const row = getKeyRow(db, userId, id);
+  const row = await getKeyRow(db, userId, id);
   if (!row) throw new HttpError(404, 'KEY_NOT_FOUND', '没有找到这个 API 配置。');
   try {
     const result = await testRow(row, config);
-    updateTestState(db, row.id, 'connected', '');
-    return { key: rowWithProvider(getKeyRow(db, userId, id)), test: result };
+    await updateTestState(db, row.id, 'connected', '');
+    return { key: rowWithProvider(await getKeyRow(db, userId, id)), test: result };
   } catch (error) {
-    updateTestState(db, row.id, 'error', error.message);
+    await updateTestState(db, row.id, 'error', error.message);
     throw error;
   }
 }
 
 async function starKey(db, config, userId, id) {
-  const row = getKeyRow(db, userId, id);
+  const row = await getKeyRow(db, userId, id);
   if (!row) throw new HttpError(404, 'KEY_NOT_FOUND', '没有找到这个 API 配置。');
 
   let test;
   try {
     test = await testRow(row, config);
   } catch (error) {
-    updateTestState(db, row.id, 'error', error.message);
+    await updateTestState(db, row.id, 'error', error.message);
     const wrapped = new HttpError(422, 'KEY_NOT_WORKING', error.message);
     wrapped.providerStatus = error.providerStatus;
     throw wrapped;
   }
 
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    db.prepare('UPDATE api_keys SET starred = 0, updated_at = ? WHERE user_id = ?').run(Date.now(), userId);
-    db.prepare(
-      'UPDATE api_keys SET starred = 1, status = ?, last_checked_at = ?, last_error = ?, updated_at = ? WHERE id = ?'
-    ).run('connected', Date.now(), '', Date.now(), id);
-    db.exec('COMMIT');
-  } catch (error) {
-    db.exec('ROLLBACK');
-    throw error;
-  }
+  await db.transaction(async (tx) => {
+    const now = Date.now();
+    await tx.execute('UPDATE api_keys SET starred = 0, updated_at = ? WHERE user_id = ?', [now, userId]);
+    await tx.execute(
+      'UPDATE api_keys SET starred = 1, status = ?, last_checked_at = ?, last_error = ?, updated_at = ? WHERE id = ? AND user_id = ?',
+      ['connected', now, '', now, id, userId]
+    );
+  });
 
-  return { key: rowWithProvider(getKeyRow(db, userId, id)), test };
+  return { key: rowWithProvider(await getKeyRow(db, userId, id)), test };
 }
 
-function deleteKey(db, userId, id) {
-  const row = getKeyRow(db, userId, id);
+async function deleteKey(db, userId, id) {
+  const row = await getKeyRow(db, userId, id);
   if (!row) throw new HttpError(404, 'KEY_NOT_FOUND', '没有找到这个 API 配置。');
 
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    db.prepare('DELETE FROM api_keys WHERE id = ? AND user_id = ?').run(id, userId);
+  return db.transaction(async (tx) => {
+    await tx.execute('DELETE FROM api_keys WHERE id = ? AND user_id = ?', [id, userId]);
     let activeKeyId = null;
     if (row.starred) {
-      const next = db.prepare(
-        'SELECT id FROM api_keys WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
-      ).get(userId);
+      const next = await tx.one(
+        'SELECT id FROM api_keys WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+        [userId]
+      );
       if (next) {
-        db.prepare('UPDATE api_keys SET starred = 1, updated_at = ? WHERE id = ?').run(Date.now(), next.id);
+        await tx.execute('UPDATE api_keys SET starred = 1, updated_at = ? WHERE id = ?', [Date.now(), next.id]);
         activeKeyId = Number(next.id);
       }
     }
-    db.exec('COMMIT');
     return { deleted: true, activeKeyId };
-  } catch (error) {
-    db.exec('ROLLBACK');
-    throw error;
-  }
+  });
 }
 
-function markKeyStatus(db, id, status, errorMessage) {
-  updateTestState(db, id, status, errorMessage);
+async function markKeyStatus(db, id, status, errorMessage) {
+  await updateTestState(db, id, status, errorMessage);
 }
 
 module.exports = {

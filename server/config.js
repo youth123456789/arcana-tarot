@@ -29,14 +29,23 @@ function loadConfig() {
   }
 
   const mailMode = String(process.env.MAIL_MODE || 'console').toLowerCase();
-  if (!['console', 'smtp'].includes(mailMode)) {
-    throw new Error('MAIL_MODE must be console or smtp');
+  if (!['console', 'smtp', 'brevo', 'smtp2go'].includes(mailMode)) {
+    throw new Error('MAIL_MODE must be console, smtp, brevo or smtp2go');
   }
 
   const smtpUser = String(process.env.SMTP_USER || '').trim();
   const smtpPass = String(process.env.SMTP_PASS || '').trim();
+  const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
+  const smtp2goApiKey = String(process.env.SMTP2GO_API_KEY || '').trim();
+  const mailFrom = String(process.env.MAIL_FROM || smtpUser).trim();
   if (mailMode === 'smtp' && (!smtpUser || !smtpPass)) {
     throw new Error('SMTP_USER and SMTP_PASS are required when MAIL_MODE=smtp');
+  }
+  if (mailMode === 'brevo' && (!brevoApiKey || !mailFrom)) {
+    throw new Error('BREVO_API_KEY and MAIL_FROM are required when MAIL_MODE=brevo');
+  }
+  if (mailMode === 'smtp2go' && (!smtp2goApiKey || !mailFrom)) {
+    throw new Error('SMTP2GO_API_KEY and MAIL_FROM are required when MAIL_MODE=smtp2go');
   }
 
   let providerOverrides = {};
@@ -52,6 +61,7 @@ function loadConfig() {
     port: numberFromEnv('PORT', 4173),
     host: process.env.HOST || '0.0.0.0',
     dbPath: process.env.DB_PATH || path.join(rootDir, 'data', 'arcana.db'),
+    databaseUrl: String(process.env.DATABASE_URL || '').trim(),
     appSecret,
     auth: {
       codeTtlMs: numberFromEnv('AUTH_CODE_TTL_MS', 10 * 60 * 1000),
@@ -71,7 +81,10 @@ function loadConfig() {
       secure: String(process.env.SMTP_SECURE || 'true').toLowerCase() !== 'false',
       user: smtpUser,
       pass: smtpPass,
-      fromName: process.env.SMTP_FROM_NAME || 'ARCANA'
+      brevoApiKey,
+      smtp2goApiKey,
+      from: mailFrom,
+      fromName: process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || 'ARCANA'
     },
     ai: {
       timeoutMs: numberFromEnv('AI_TIMEOUT_MS', 45000),
