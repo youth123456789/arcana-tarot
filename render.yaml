@@ -12,8 +12,8 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: MAIL_MODE
-        value: smtp2go
-      - key: SMTP2GO_API_KEY
+        value: sendgrid
+      - key: SENDGRID_API_KEY
         sync: false
       - key: MAIL_FROM
         sync: false

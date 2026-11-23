@@ -93,6 +93,44 @@ function createSmtp2GoMailer(config) {
   };
 }
 
+function createSendGridMailer(config) {
+  const apiKey = config.mail.sendgridApiKey;
+  const from = config.mail.from;
+  return {
+    mode: 'sendgrid',
+    async sendCode(email, code) {
+      const content = codeEmail(code);
+      let response;
+      try {
+        response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${apiKey}`,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email }] }],
+            from: { email: from, name: config.mail.fromName },
+            subject: content.subject,
+            content: [
+              { type: 'text/plain', value: content.text },
+              { type: 'text/html', value: content.html }
+            ]
+          }),
+          signal: AbortSignal.timeout(12000)
+        });
+      } catch (error) {
+        throw new Error(`SendGrid request failed: ${error.message}`);
+      }
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        throw new Error(`SendGrid HTTP ${response.status}: ${body.slice(0, 200)}`);
+      }
+      return { mode: 'sendgrid' };
+    }
+  };
+}
+
 function createMailer(config) {
   if (config.mail.mode === 'console') {
     return {
@@ -110,6 +148,10 @@ function createMailer(config) {
 
   if (config.mail.mode === 'smtp2go') {
     return createSmtp2GoMailer(config);
+  }
+
+  if (config.mail.mode === 'sendgrid') {
+    return createSendGridMailer(config);
   }
 
   const transport = nodemailer.createTransport({

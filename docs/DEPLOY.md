@@ -9,7 +9,7 @@ Android APK
    ↓ HTTPS
 Render Free Web Service
    ├── Supabase Free Postgres：账号、Session、加密 API Key
-   └── SMTP2GO Free HTTPS API：QQ 邮箱验证码
+   └── SendGrid Free HTTPS API：QQ 邮箱验证码
 ```
 
 所需账号：
@@ -17,7 +17,7 @@ Render Free Web Service
 - GitHub（仓库已有）
 - Render
 - Supabase
-- SMTP2GO
+- SendGrid
 
 三个平台都有免费层。免费层有休眠/暂停/额度限制，但数据能持久保存。
 
@@ -35,7 +35,7 @@ Render 免费 Web Service 有两个硬限制：
 所以免费方案必须：
 
 - 用 Supabase Postgres 代替 SQLite；
-- 用 SMTP2GO HTTPS API 代替 QQ SMTP。
+- 用 SendGrid HTTPS API 代替 QQ SMTP。
 
 代码已经支持这两种模式。
 
@@ -46,7 +46,7 @@ Render 免费 Web Service 有两个硬限制：
 Render 构建的是 GitHub 上的代码，不是本机文件。先确认仓库已经包含最新的：
 
 - `server/db.js`（Postgres 支持）
-- `server/mail.js`（SMTP2GO 支持）
+- `server/mail.js`（SendGrid 支持）
 - `render.yaml`（`plan: free`，无磁盘）
 
 在项目根目录执行：
@@ -93,31 +93,29 @@ postgresql://postgres.xxxx:你的密码@aws-0-region.pooler.supabase.com:5432/po
 
 ---
 
-## 第 2 步：创建 SMTP2GO 邮件账号
+## 第 2 步：创建 SendGrid 邮件账号
 
-QQ 邮箱不能作为 Brevo 的发件人，因为 Brevo 要求对自有域名做认证，免费邮箱域名无法通过。  
-SMTP2GO 的免费计划允许添加单个发件邮箱，适合只有 QQ 邮箱的情况。
+Brevo 和 SMTP2GO 都不允许使用 QQ、Gmail 这类公共免费邮箱注册或作为发件人，所以这两条路都走不通。
 
-1. 打开 <https://www.smtp2go.com/>，免费注册；
-2. 进入 Senders；
-3. 添加你的 QQ 邮箱作为 single sender；
-4. 去 QQ 邮箱收验证码并完成验证；
-5. 进入 API Keys；
-6. 创建一个 API Key 并保存。
+SendGrid 的 Single Sender 验证允许使用 QQ 邮箱作为发件地址，免费计划约 100 封/天。
 
-免费额度约 1000 封/月、200 封/天。
+1. 打开 <https://signup.sendgrid.com/>，用 QQ 邮箱注册；
+2. 完成邮箱验证和账号初始化；
+3. 进入 Settings → Sender Authentication；
+4. 点击 Verify a Single Sender；
+5. From Email 填你的 QQ 邮箱，填写必要信息；
+6. 去 QQ 邮箱收验证邮件并完成验证；
+7. 进入 Settings → API Keys，创建 API Key 并保存。
 
 关键配置：
 
 ```dotenv
-MAIL_MODE=smtp2go
-SMTP2GO_API_KEY=你的 SMTP2GO API Key
+MAIL_MODE=sendgrid
+SENDGRID_API_KEY=你的 SendGrid API Key
 MAIL_FROM=你的QQ邮箱@qq.com
 ```
 
-`MAIL_FROM` 必须是 SMTP2GO 里已验证的发件邮箱，否则 API 会拒绝。
-
----
+`MAIL_FROM` 必须和 Single Sender 里验证的邮箱完全一致。
 
 ## 第 3 步：Render 创建免费服务
 
@@ -146,7 +144,7 @@ Disk: 无
 
 ```text
 DATABASE_URL=第 1 步的 Supabase Session Pooler 连接串
-SMTP2GO_API_KEY=第 2 步的 SMTP2GO API Key
+SENDGRID_API_KEY=第 2 步的 SendGrid API Key
 MAIL_FROM=你的QQ邮箱@qq.com
 ```
 
@@ -182,7 +180,7 @@ https://arcana-xxxx.onrender.com/api/health
 {
   "ok": true,
   "service": "arcana",
-  "mail": { "mode": "smtp2go" },
+  "mail": { "mode": "sendgrid" },
   "storage": "postgres"
 }
 ```
@@ -218,11 +216,11 @@ npm run android:debug
 
 检查：
 
-- SMTP2GO 的 sender 是否已验证；
+- SendGrid 的 sender 是否已验证；
 - `MAIL_FROM` 是否和已验证 sender 完全一致；
-- `SMTP2GO_API_KEY` 是否正确；
-- SMTP2GO 免费额度是否用完；
-- Render 日志里是否出现 `SMTP2GO HTTP 401/400`。
+- `SENDGRID_API_KEY` 是否正确；
+- SendGrid 免费额度是否用完；
+- Render 日志里是否出现 `SendGrid HTTP 401/403`。
 
 ### Render 日志报数据库连接失败
 
@@ -249,7 +247,7 @@ npm run android:debug
 
 - Render 免费：休眠、冷启动、512 MB 内存；
 - Supabase 免费：500 MB 数据库，7 天不活动暂停；
-- SMTP2GO 免费：约 1000 封/月；
+- SendGrid 免费：约 100 封/天；
 - 限流在单实例内存里，适合小范围朋友；
 - 不适合大量公开用户或商业运营。
 
@@ -262,7 +260,7 @@ npm run android:debug
 - Render 升到 Starter；
 - Render 加 1 GB 持久磁盘；
 - 数据库可以继续用 Supabase，也可以切回 SQLite；
-- QQ SMTP 可用，但当前 SMTP2GO 也可以继续用。
+- QQ SMTP 可用，但当前 SendGrid 也可以继续用。
 
 代码不需要改，只改环境变量和 Render 套餐。
 

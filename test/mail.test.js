@@ -109,3 +109,52 @@ test('SMTP2GO mailer reports rejected sends', async () => {
     global.fetch = originalFetch;
   }
 });
+
+
+test('SendGrid mailer sends code through HTTPS API', async () => {
+  const originalFetch = global.fetch;
+  let captured = null;
+  global.fetch = async (url, options) => {
+    captured = { url, options };
+    return new Response(null, { status: 202 });
+  };
+  try {
+    const mailer = createMailer({
+      mail: {
+        mode: 'sendgrid',
+        sendgridApiKey: 'sendgrid-test-key',
+        from: 'sender@qq.com',
+        fromName: 'ARCANA'
+      }
+    });
+    const result = await mailer.sendCode('friend@qq.com', '112233');
+    assert.equal(result.mode, 'sendgrid');
+    assert.equal(captured.url, 'https://api.sendgrid.com/v3/mail/send');
+    assert.equal(captured.options.headers.authorization, 'Bearer sendgrid-test-key');
+    const body = JSON.parse(captured.options.body);
+    assert.equal(body.from.email, 'sender@qq.com');
+    assert.equal(body.personalizations[0].to[0].email, 'friend@qq.com');
+    assert.match(body.content[0].value, /112233/);
+    assert.match(body.content[1].value, /112233/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('SendGrid mailer reports HTTP errors', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async () => new Response('forbidden', { status: 403 });
+  try {
+    const mailer = createMailer({
+      mail: {
+        mode: 'sendgrid',
+        sendgridApiKey: 'bad-key',
+        from: 'sender@qq.com',
+        fromName: 'ARCANA'
+      }
+    });
+    await assert.rejects(() => mailer.sendCode('friend@qq.com', '112233'), /SendGrid HTTP 403/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

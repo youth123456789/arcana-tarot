@@ -29,14 +29,15 @@ function loadConfig() {
   }
 
   const mailMode = String(process.env.MAIL_MODE || 'console').toLowerCase();
-  if (!['console', 'smtp', 'brevo', 'smtp2go'].includes(mailMode)) {
-    throw new Error('MAIL_MODE must be console, smtp, brevo or smtp2go');
+  if (!['console', 'smtp', 'brevo', 'smtp2go', 'sendgrid'].includes(mailMode)) {
+    throw new Error('MAIL_MODE must be console, smtp, brevo, smtp2go or sendgrid');
   }
 
   const smtpUser = String(process.env.SMTP_USER || '').trim();
   const smtpPass = String(process.env.SMTP_PASS || '').trim();
   const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
   const smtp2goApiKey = String(process.env.SMTP2GO_API_KEY || '').trim();
+  const sendgridApiKey = String(process.env.SENDGRID_API_KEY || '').trim();
   const mailFrom = String(process.env.MAIL_FROM || smtpUser).trim();
   if (mailMode === 'smtp' && (!smtpUser || !smtpPass)) {
     throw new Error('SMTP_USER and SMTP_PASS are required when MAIL_MODE=smtp');
@@ -46,6 +47,9 @@ function loadConfig() {
   }
   if (mailMode === 'smtp2go' && (!smtp2goApiKey || !mailFrom)) {
     throw new Error('SMTP2GO_API_KEY and MAIL_FROM are required when MAIL_MODE=smtp2go');
+  }
+  if (mailMode === 'sendgrid' && (!sendgridApiKey || !mailFrom)) {
+    throw new Error('SENDGRID_API_KEY and MAIL_FROM are required when MAIL_MODE=sendgrid');
   }
 
   let providerOverrides = {};
@@ -83,6 +87,7 @@ function loadConfig() {
       pass: smtpPass,
       brevoApiKey,
       smtp2goApiKey,
+      sendgridApiKey,
       from: mailFrom,
       fromName: process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || 'ARCANA'
     },
