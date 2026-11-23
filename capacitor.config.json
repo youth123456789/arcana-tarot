@@ -1,0 +1,13 @@
+{
+  "appId": "com.arcana.tarot",
+  "appName": "ARCANA",
+  "webDir": "www",
+  "backgroundColor": "#07040e",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#07040e"
+  }
+}

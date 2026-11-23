@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#07040e">
+  <meta name="description" content="ARCANA 塔罗占卜助手 —— 把现实中抽到的牌录入牌阵，让 AI 结合牌义与你的问题，给出一次完整的解读。">
+  <title>ARCANA · 塔罗占卜助手</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app" id="app" data-screen="home">
+    <canvas class="cosmos" id="cosmos" aria-hidden="true"></canvas>
+    <div class="ambient" aria-hidden="true">
+      <span class="ambient__glow ambient__glow--one"></span>
+      <span class="ambient__glow ambient__glow--two"></span>
+      <span class="ambient__glow ambient__glow--three"></span>
+      <span class="ambient__vignette"></span>
+    </div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="touch-layer" id="touchLayer" aria-hidden="true"></div>
+
+    <main class="screens" id="screens">
+
+      <!-- ================= 首页 ================= -->
+      <section class="screen screen--home is-active" id="screen-home" data-screen="home" aria-label="ARCANA 塔罗占卜助手首页">
+        <div class="home">
+          <header class="home-top">
+            <div class="brand">
+              <span class="brand__sigil" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="8.5"></circle>
+                  <path d="M12 3.5c2.2 2.4 3.4 5.2 3.4 8.5s-1.2 6.1-3.4 8.5c-2.2-2.4-3.4-5.2-3.4-8.5S9.8 5.9 12 3.5Z"></path>
+                  <path d="M3.5 12h17"></path>
+                </svg>
+              </span>
+              <span class="brand__word">ARCANA</span>
+              <span class="brand__cn">塔罗</span>
+            </div>
+            <div class="home-date">
+              <span id="homeDate">今夜</span>
+              <small>月之门开启</small>
+            </div>
+            <button class="profile-button" id="profileButton" type="button" data-action="open-profile" aria-label="打开个人中心">
+              <span class="profile-button__avatar" id="profileAvatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8.5" r="3.1"></circle>
+                  <path d="M5.5 19.5c.7-3 3.1-4.8 6.5-4.8s5.8 1.8 6.5 4.8"></path>
+                </svg>
+              </span>
+              <span class="profile-button__dot" id="profileDot" hidden></span>
+            </button>
+          </header>
+
+          <div class="home-hero">
+            <div class="oracle" aria-hidden="true">
+              <span class="oracle__aura"></span>
+              <svg class="oracle__orbit-text" viewBox="0 0 340 340">
+                <defs>
+                  <path id="orbitPath" d="M170,170 m-142,0 a142,142 0 1,1 284,0 a142,142 0 1,1 -284,0"></path>
+                </defs>
+                <text>
+                  <textPath href="#orbitPath" startOffset="0%">ARCANA · LXXVIII · THE VEIL IS THIN · ASK WITH A QUIET HEART · </textPath>
+                </text>
+              </svg>
+              <span class="oracle__ring oracle__ring--outer"></span>
+              <span class="oracle__ring oracle__ring--inner"></span>
+              <span class="oracle__orbit-dot oracle__orbit-dot--a"></span>
+              <span class="oracle__orbit-dot oracle__orbit-dot--b"></span>
+
+              <div class="oracle__fan">
+                <span class="oracle__card oracle__card--left"></span>
+                <span class="oracle__card oracle__card--right"></span>
+                <div class="oracle-card">
+                  <span class="oracle-card__frame"></span>
+                  <span class="oracle-card__corner oracle-card__corner--tl">XVIII</span>
+                  <span class="oracle-card__corner oracle-card__corner--br">XVIII</span>
+                  <span class="oracle-card__stars">
+                    <i></i><i></i><i></i><i></i><i></i>
+                  </span>
+                  <svg class="oracle-card__sigil" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="40" cy="40" r="27" stroke-width=".6" opacity=".55"></circle>
+                    <circle cx="40" cy="40" r="22" stroke-width=".4" opacity=".28"></circle>
+                    <path d="M52 49.5A15.5 15.5 0 1 1 37.2 25a11.8 11.8 0 0 0 14.8 24.5Z" stroke-width="1"></path>
+                    <path d="M40 6v6M40 68v6M6 40h6M68 40h6" stroke-width=".7" opacity=".6"></path>
+                    <path d="M17 17l3 3M60 60l3 3M63 17l-3 3M20 60l-3 3" stroke-width=".6" opacity=".4"></path>
+                    <circle cx="52" cy="24" r="1.4" fill="currentColor" stroke="none"></circle>
+                    <circle cx="27" cy="55" r="1" fill="currentColor" stroke="none"></circle>
+                  </svg>
+                  <span class="oracle-card__sigil-caption">THE MOON</span>
+                  <span class="oracle-card__brand">ARCANA</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-copy">
+              <h1>听见<br><em>牌面的低语</em></h1>
+              <p class="home-sub">牌不预言命运，它只照见此刻。<br>静心，抽牌，让象征说出你尚未承认的心事。</p>
+            </div>
+          </div>
+
+          <div class="home-cta">
+            <button class="jelly-btn jelly-btn--home" id="enterBtn" type="button" aria-label="进入塔罗占卜">
+              <span class="jelly-btn__glow" aria-hidden="true"></span>
+              <span class="jelly-btn__text">
+                <strong>开启占卜</strong>
+                <small>ENTER THE ARCANA</small>
+              </span>
+            </button>
+            <p class="home-hint"><span></span>静心 · 抽牌 · 听牌面开口<span></span></p>
+          </div>
+
+          <div class="home-astrolabe" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+          <footer class="home-footer">
+            <span class="home-footer__left">78 CARDS</span>
+            <span class="home-footer__line"></span>
+            <span>静心 · 提问 · 揭晓</span>
+          </footer>
+        </div>
+      </section>
+
+      <!-- ================= 牌阵列表 ================= -->
+      <section class="screen screen--spreads" id="screen-spreads" data-screen="spreads" aria-label="选择牌阵" aria-hidden="true">
+        <header class="topbar">
+          <button class="icon-btn" type="button" data-go="home" aria-label="返回首页">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 18l-6-6 6-6"></path></svg>
+          </button>
+          <span class="topbar__title">选择牌阵</span>
+          <span class="topbar__aside">—</span>
+        </header>
+        <div class="page page--spreads">
+          <header class="page-head reveal">
+            <p class="eyebrow"><span class="eyebrow__line"></span>CHOOSE YOUR SPREAD</p>
+            <h1>选择牌阵</h1>
+            <p class="page-head__sub">不同的排列，会照亮问题的不同侧面。<br>选一个与你此刻最贴近的。</p>
+          </header>
+          <div class="filter-row reveal" id="spreadFilters" role="tablist" aria-label="按主题筛选牌阵"></div>
+          <div class="deck-legend reveal" aria-label="牌阵用牌说明">
+            <span><i class="deck-dot deck-dot--full"></i>全牌 78</span>
+            <span><i class="deck-dot deck-dot--major"></i>大牌 22</span>
+            <span><i class="deck-dot deck-dot--minor"></i>小牌 56</span>
+          </div>
+          <div class="spread-list" id="spreadList"></div>
+          <p class="page-note reveal"><span class="page-note__dot"></span>牌面只是镜子，答案始终握在你手里。</p>
+        </div>
+      </section>
+
+      <!-- ================= 牌阵详情 ================= -->
+      <section class="screen screen--detail" id="screen-detail" data-screen="detail" aria-label="牌阵详情" aria-hidden="true">
+        <header class="topbar">
+          <button class="icon-btn" type="button" data-go="spreads" aria-label="返回牌阵列表">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 18l-6-6 6-6"></path></svg>
+          </button>
+          <span class="topbar__title" id="detailTopTitle">牌阵详情</span>
+          <span class="topbar__aside" id="detailTopAside">—</span>
+        </header>
+        <div class="page page--detail" id="detailContent"></div>
+      </section>
+
+      <!-- ================= 录入牌阵 ================= -->
+      <section class="screen screen--input" id="screen-input" data-screen="input" aria-label="录入牌阵" aria-hidden="true">
+        <header class="topbar">
+          <button class="icon-btn" type="button" data-go="detail" aria-label="返回牌阵说明">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 18l-6-6 6-6"></path></svg>
+          </button>
+          <span class="topbar__title">录入牌阵</span>
+          <span class="topbar__aside" id="inputTopAside">—</span>
+        </header>
+        <div class="page page--input" id="inputContent"></div>
+        <div class="bottom-dock" id="inputDock">
+          <div class="bottom-dock__inner bottom-dock__inner--center">
+            <div class="input-progress" id="inputProgress">
+              <span class="input-progress__label">已录入 <strong id="pickedCount">0</strong> / <span id="totalCount">0</span></span>
+              <span class="input-progress__track"><i id="inputProgressBar"></i></span>
+            </div>
+            <button class="jelly-btn jelly-btn--compact" id="interpretBtn" type="button" aria-disabled="true">
+              <span class="jelly-btn__glow" aria-hidden="true"></span>
+              <span class="jelly-btn__text">
+                <strong>开始解读</strong>
+                <small>START THE READING</small>
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 思考中 ================= -->
+      <section class="screen screen--thinking" id="screen-thinking" data-screen="thinking" aria-label="正在生成塔罗解读" aria-hidden="true">
+        <div class="thinking">
+          <div class="thinking__halo" aria-hidden="true"></div>
+          <div class="thinking__inner">
+            <p class="eyebrow eyebrow--center"><span class="eyebrow__line"></span>CONSULTING THE ARCANA<span class="eyebrow__line"></span></p>
+
+            <div class="think-orbit" aria-hidden="true">
+              <span class="think-orbit__ring think-orbit__ring--one"></span>
+              <span class="think-orbit__ring think-orbit__ring--two"></span>
+              <span class="think-orbit__ring think-orbit__ring--three"></span>
+              <span class="think-orbit__dot"></span>
+              <span class="think-card think-card--one"></span>
+              <span class="think-card think-card--two"></span>
+              <span class="think-card think-card--three"></span>
+              <span class="think-core">
+                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M36.8 28.2A14 14 0 1 1 19.8 11.2a11.2 11.2 0 0 0 17 17Z"></path>
+                  <circle cx="24" cy="24" r="1.4" fill="currentColor" stroke="none"></circle>
+                  <path d="M24 4v4M24 40v4M4 24h4M40 24h4" opacity=".5"></path>
+                </svg>
+              </span>
+            </div>
+
+            <h1 class="thinking__title">正在读取<br><em>牌面的低语</em></h1>
+            <p class="thinking__meta"><span id="thinkingSpread">—</span><span class="dot"></span><span id="thinkingTimer">00:00</span><span class="dot"></span><span id="thinkingStatus">思考中</span></p>
+
+            <div class="think-steps" id="thinkingSteps" aria-live="polite"></div>
+            <p class="thinking__hint" id="thinkingHint">请稍候，答案正在缓慢成形</p>
+
+            <div class="thinking-error" id="thinkingError" hidden>
+              <p class="thinking-error__title">解读暂时中断</p>
+              <p class="thinking-error__message" id="thinkingErrorMessage" aria-live="assertive"></p>
+              <div class="thinking-error__actions">
+                <button class="btn btn--ghost btn--pill" type="button" data-action="back-to-input">返回检查</button>
+                <button class="btn btn--ghost btn--pill" type="button" data-action="open-profile">个人中心</button>
+                <button class="jelly-btn jelly-btn--compact" type="button" data-action="retry-reading">
+                  <span class="jelly-btn__glow" aria-hidden="true"></span>
+                  <span class="jelly-btn__text"><strong>重新请求</strong><small>TRY AGAIN</small></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 解读结果 ================= -->
+      <section class="screen screen--result" id="screen-result" data-screen="result" aria-label="塔罗解读结果" aria-hidden="true">
+        <header class="topbar topbar--result">
+          <button class="icon-btn" type="button" data-action="retry" aria-label="返回修改牌阵">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 18l-6-6 6-6"></path></svg>
+          </button>
+          <span class="topbar__title">你的解读</span>
+          <span class="topbar__aside topbar__aside--pill">AI</span>
+        </header>
+        <div class="page page--result" id="resultContent"></div>
+        <div class="bottom-dock bottom-dock--result" id="resultDock">
+          <div class="bottom-dock__inner bottom-dock__inner--actions">
+            <button class="btn btn--ghost btn--pill" type="button" data-action="retry">重新输入</button>
+            <button class="jelly-btn jelly-btn--compact" type="button" data-action="new">
+              <span class="jelly-btn__glow" aria-hidden="true"></span>
+              <span class="jelly-btn__text">
+                <strong>新的牌阵</strong>
+                <small>NEW SPREAD</small>
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ================= 选择牌面底部抽屉 ================= -->
+    <div class="overlay" id="cardPicker" hidden>
+      <div class="overlay__scrim" data-close-picker></div>
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+        <div class="sheet__handle" aria-hidden="true"></div>
+        <header class="sheet__head">
+          <div>
+            <p class="eyebrow"><span class="eyebrow__line"></span>CHOOSE YOUR CARD</p>
+            <h2 id="pickerTitle">选择牌面</h2>
+          </div>
+          <button class="icon-btn icon-btn--small" type="button" data-close-picker aria-label="关闭选牌面板">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+          </button>
+        </header>
+        <div class="sheet__position" id="pickerPosition">为「位置 1」选择一张牌</div>
+        <label class="search-field" for="cardSearch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+          <input id="cardSearch" type="search" inputmode="search" autocomplete="off" placeholder="搜索牌名或英文名…" aria-label="搜索牌名或英文名">
+          <button class="search-field__clear" type="button" id="clearSearch" aria-label="清空搜索" hidden>×</button>
+        </label>
+        <div class="picker-tabs" id="pickerTabs" role="tablist" aria-label="按类别筛选牌面"></div>
+        <div class="card-picker-list" id="cardList"></div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="veil" id="veil" aria-hidden="true"></div>
+  </div>
+
+  <div class="profile-layer" id="profileLayer" hidden>
+    <div class="profile-backdrop" data-action="close-profile"></div>
+    <aside class="profile-drawer" id="profileDrawer" aria-label="个人中心" aria-hidden="true">
+      <header class="profile-drawer__head">
+        <div>
+          <p class="eyebrow"><span class="eyebrow__line"></span>PERSONAL CENTER</p>
+          <h2>个人中心</h2>
+        </div>
+        <button class="icon-btn icon-btn--small" type="button" data-action="close-profile" aria-label="收起个人中心">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18"></path>
+          </svg>
+        </button>
+      </header>
+      <div class="profile-drawer__body" id="profileContent"></div>
+      <footer class="profile-drawer__foot">
+        <span>ARCANA · 0.4</span>
+        <button type="button" class="text-btn" data-action="open-api-settings">服务地址</button>
+      </footer>
+      <section class="profile-subview" id="profileSubview" hidden aria-hidden="true">
+        <header class="profile-subview__head">
+          <button class="icon-btn icon-btn--small" type="button" data-action="profile-back" aria-label="返回个人中心">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H5M11 18l-6-6 6-6"></path></svg>
+          </button>
+          <div class="profile-subview__title">
+            <p class="eyebrow"><span class="eyebrow__line"></span>PERSONAL</p>
+            <h2 id="profileSubviewTitle">API 配置</h2>
+          </div>
+          <button class="icon-btn icon-btn--small" type="button" data-action="close-profile" aria-label="关闭个人中心">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </header>
+        <div class="profile-subview__body" id="profileSubviewContent"></div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="settings-modal" id="apiSettings" hidden>
+    <div class="settings-modal__backdrop" data-action="close-api-settings"></div>
+    <section class="settings-card" role="dialog" aria-modal="true" aria-labelledby="apiSettingsTitle">
+      <p class="eyebrow"><span class="eyebrow__line"></span>CONNECTION</p>
+      <h2 id="apiSettingsTitle">连接解读服务</h2>
+      <p class="settings-card__lead">APK 不包含 AI 密钥。请填写你已经部署的后端地址，例如 <code>https://api.example.com</code>。</p>
+      <label class="settings-field" for="apiBaseInput">
+        <span>服务地址</span>
+        <input id="apiBaseInput" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://api.example.com">
+      </label>
+      <p class="settings-card__hint" id="apiSettingsHint">网页版可留空；手机 App 建议填写 HTTPS 地址，局域网调试可用 http://电脑IP:4173。</p>
+      <div class="settings-card__actions">
+        <button class="btn btn--ghost btn--pill" type="button" data-action="close-api-settings">取消</button>
+        <button class="jelly-btn jelly-btn--compact" type="button" data-action="save-api-settings">
+          <span class="jelly-btn__glow" aria-hidden="true"></span>
+          <span class="jelly-btn__text"><strong>保存连接</strong><small>SAVE</small></span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <noscript>
+    <div class="noscript">请开启 JavaScript，以进入 ARCANA 的塔罗世界。</div>
+  </noscript>
+
+  <script src="js/runtime-config.js" defer></script>
+  <script src="shared/tarot.js" defer></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

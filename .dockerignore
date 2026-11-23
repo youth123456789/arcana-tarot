@@ -1,0 +1,15 @@
+node_modules
+android
+www
+dist
+docs
+test
+scripts
+.npm-cache
+.gradle
+.env
+.env.*
+*.log
+
+data
+android

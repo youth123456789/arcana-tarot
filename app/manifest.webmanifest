@@ -1,0 +1,26 @@
+{
+  "name": "ARCANA · 塔罗占卜助手",
+  "short_name": "ARCANA",
+  "description": "把现实中抽到的塔罗牌录入牌阵，让 AI 结合牌义与你的问题，给出一份完整的解读。",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#06030c",
+  "theme_color": "#07040e",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

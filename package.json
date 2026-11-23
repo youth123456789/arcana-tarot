@@ -1,0 +1,32 @@
+{
+  "name": "arcana-tarot",
+  "version": "0.4.0",
+  "private": true,
+  "description": "ARCANA · 塔罗占卜助手（Capacitor Android + Node.js AI 后端）",
+  "type": "commonjs",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node test/api.test.js",
+    "build:web": "node scripts/build-web.mjs",
+    "android:sync": "node scripts/build-web.mjs && npx cap sync android",
+    "android:open": "npm run build:web && npx cap sync android && npx cap open android",
+    "android:debug": "npm run build:web && node scripts/build-android.mjs debug",
+    "android:release": "npm run build:web && node scripts/build-android.mjs release"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "nodemailer": "^6.10.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  }
+}
