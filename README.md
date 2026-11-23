@@ -286,3 +286,4 @@ npm test
 - [`docs/DEPLOY.md`](docs/DEPLOY.md)：免费部署完整步骤
 - [`docs/ANDROID.md`](docs/ANDROID.md)：APK 构建、安装、签名
 - [`docs/PROVIDERS.md`](docs/PROVIDERS.md)：服务商与模型
+- [`PRIVACY.md`](PRIVACY.md)：隐私说明
