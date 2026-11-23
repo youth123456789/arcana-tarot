@@ -9,7 +9,7 @@ Android APK
    ↓ HTTPS
 Render Free Web Service
    ├── Supabase Free Postgres：账号、Session、加密 API Key
-   └── SendGrid Free HTTPS API：QQ 邮箱验证码
+   └── Mailjet Free HTTPS API：QQ 邮箱验证码
 ```
 
 所需账号：
@@ -17,7 +17,7 @@ Render Free Web Service
 - GitHub（仓库已有）
 - Render
 - Supabase
-- SendGrid
+- Mailjet
 
 三个平台都有免费层。免费层有休眠/暂停/额度限制，但数据能持久保存。
 
@@ -35,7 +35,7 @@ Render 免费 Web Service 有两个硬限制：
 所以免费方案必须：
 
 - 用 Supabase Postgres 代替 SQLite；
-- 用 SendGrid HTTPS API 代替 QQ SMTP。
+- 用 Mailjet HTTPS API 代替 QQ SMTP。
 
 代码已经支持这两种模式。
 
@@ -46,7 +46,7 @@ Render 免费 Web Service 有两个硬限制：
 Render 构建的是 GitHub 上的代码，不是本机文件。先确认仓库已经包含最新的：
 
 - `server/db.js`（Postgres 支持）
-- `server/mail.js`（SendGrid 支持）
+- `server/mail.js`（Mailjet 支持）
 - `render.yaml`（`plan: free`，无磁盘）
 
 在项目根目录执行：
@@ -93,29 +93,31 @@ postgresql://postgres.xxxx:你的密码@aws-0-region.pooler.supabase.com:5432/po
 
 ---
 
-## 第 2 步：创建 SendGrid 邮件账号
+## 第 2 步：创建 Mailjet 邮件账号
 
-Brevo 和 SMTP2GO 都不允许使用 QQ、Gmail 这类公共免费邮箱注册或作为发件人，所以这两条路都走不通。
+Brevo 和 SMTP2GO 不允许公共免费邮箱注册；SendGrid 注册时要求手机短信验证，中国大陆号码经常收不到验证码。  
+Mailjet 的免费计划不需要手机验证，支持 Single Sender，可以用 QQ 邮箱作为发件地址。
 
-SendGrid 的 Single Sender 验证允许使用 QQ 邮箱作为发件地址，免费计划约 100 封/天。
+1. 打开 <https://www.mailjet.com/>，免费注册；
+2. 完成邮箱验证；
+3. 进入 Account Settings → Sender domains & addresses；
+4. 添加你的 QQ 邮箱作为单发件地址；
+5. 去 QQ 邮箱收验证邮件并完成验证；
+6. 进入 Account Settings → API Key Management；
+7. 获取 API Key 和 Secret Key。
 
-1. 打开 <https://signup.sendgrid.com/>，用 QQ 邮箱注册；
-2. 完成邮箱验证和账号初始化；
-3. 进入 Settings → Sender Authentication；
-4. 点击 Verify a Single Sender；
-5. From Email 填你的 QQ 邮箱，填写必要信息；
-6. 去 QQ 邮箱收验证邮件并完成验证；
-7. 进入 Settings → API Keys，创建 API Key 并保存。
+免费额度约 6000 封/月、200 封/天。
 
 关键配置：
 
 ```dotenv
-MAIL_MODE=sendgrid
-SENDGRID_API_KEY=你的 SendGrid API Key
+MAIL_MODE=mailjet
+MAILJET_API_KEY=你的 API Key
+MAILJET_API_SECRET=你的 Secret Key
 MAIL_FROM=你的QQ邮箱@qq.com
 ```
 
-`MAIL_FROM` 必须和 Single Sender 里验证的邮箱完全一致。
+`MAIL_FROM` 必须和 Mailjet 里验证过的发件地址完全一致。
 
 ## 第 3 步：Render 创建免费服务
 
@@ -144,7 +146,8 @@ Disk: 无
 
 ```text
 DATABASE_URL=第 1 步的 Supabase Session Pooler 连接串
-SENDGRID_API_KEY=第 2 步的 SendGrid API Key
+MAILJET_API_KEY=第 2 步的 Mailjet API Key
+MAILJET_API_SECRET=第 2 步的 Mailjet Secret Key
 MAIL_FROM=你的QQ邮箱@qq.com
 ```
 
@@ -180,7 +183,7 @@ https://arcana-xxxx.onrender.com/api/health
 {
   "ok": true,
   "service": "arcana",
-  "mail": { "mode": "sendgrid" },
+  "mail": { "mode": "mailjet" },
   "storage": "postgres"
 }
 ```
@@ -216,11 +219,11 @@ npm run android:debug
 
 检查：
 
-- SendGrid 的 sender 是否已验证；
+- Mailjet 的 sender 是否已验证；
 - `MAIL_FROM` 是否和已验证 sender 完全一致；
-- `SENDGRID_API_KEY` 是否正确；
-- SendGrid 免费额度是否用完；
-- Render 日志里是否出现 `SendGrid HTTP 401/403`。
+- `MAILJET_API_KEY` 是否正确；
+- Mailjet 免费额度是否用完；
+- Render 日志里是否出现 `Mailjet HTTP 401/403`。
 
 ### Render 日志报数据库连接失败
 
@@ -247,7 +250,7 @@ npm run android:debug
 
 - Render 免费：休眠、冷启动、512 MB 内存；
 - Supabase 免费：500 MB 数据库，7 天不活动暂停；
-- SendGrid 免费：约 100 封/天；
+- Mailjet 免费：约 200 封/天；
 - 限流在单实例内存里，适合小范围朋友；
 - 不适合大量公开用户或商业运营。
 
@@ -260,7 +263,7 @@ npm run android:debug
 - Render 升到 Starter；
 - Render 加 1 GB 持久磁盘；
 - 数据库可以继续用 Supabase，也可以切回 SQLite；
-- QQ SMTP 可用，但当前 SendGrid 也可以继续用。
+- QQ SMTP 可用，但当前 Mailjet 也可以继续用。
 
 代码不需要改，只改环境变量和 Render 套餐。
 

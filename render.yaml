@@ -12,8 +12,10 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: MAIL_MODE
-        value: sendgrid
-      - key: SENDGRID_API_KEY
+        value: mailjet
+      - key: MAILJET_API_KEY
+        sync: false
+      - key: MAILJET_API_SECRET
         sync: false
       - key: MAIL_FROM
         sync: false

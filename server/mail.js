@@ -131,6 +131,52 @@ function createSendGridMailer(config) {
   };
 }
 
+function createMailjetMailer(config) {
+  const apiKey = config.mail.mailjetApiKey;
+  const apiSecret = config.mail.mailjetApiSecret;
+  const from = config.mail.from;
+  const authorization = 'Basic ' + Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+  return {
+    mode: 'mailjet',
+    async sendCode(email, code) {
+      const content = codeEmail(code);
+      let response;
+      try {
+        response = await fetch('https://api.mailjet.com/v3.1/send', {
+          method: 'POST',
+          headers: {
+            authorization,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            Messages: [{
+              From: { Email: from, Name: config.mail.fromName },
+              To: [{ Email: email }],
+              Subject: content.subject,
+              TextPart: content.text,
+              HTMLPart: content.html
+            }]
+          }),
+          signal: AbortSignal.timeout(12000)
+        });
+      } catch (error) {
+        throw new Error(`Mailjet request failed: ${error.message}`);
+      }
+      const body = await response.text().catch(() => '');
+      if (!response.ok) {
+        throw new Error(`Mailjet HTTP ${response.status}: ${body.slice(0, 200)}`);
+      }
+      let payload = null;
+      try { payload = body ? JSON.parse(body) : null; } catch (error) { payload = null; }
+      const message = payload && Array.isArray(payload.Messages) ? payload.Messages[0] : null;
+      if (!message || String(message.Status || '').toLowerCase() !== 'success') {
+        throw new Error(`Mailjet rejected message: ${body.slice(0, 200)}`);
+      }
+      return { mode: 'mailjet' };
+    }
+  };
+}
+
 function createMailer(config) {
   if (config.mail.mode === 'console') {
     return {
@@ -152,6 +198,10 @@ function createMailer(config) {
 
   if (config.mail.mode === 'sendgrid') {
     return createSendGridMailer(config);
+  }
+
+  if (config.mail.mode === 'mailjet') {
+    return createMailjetMailer(config);
   }
 
   const transport = nodemailer.createTransport({

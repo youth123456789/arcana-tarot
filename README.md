@@ -90,11 +90,11 @@ DeepSeek、OpenAI、Anthropic Claude、Google Gemini、阿里云百炼 Qwen、Mo
 
 - Render Free：运行后端
 - Supabase Free Postgres：保存账号、Session、API Key
-- SendGrid Free：发送 QQ 邮箱验证码
+- Mailjet Free：发送 QQ 邮箱验证码
 
 不需要买域名，也不需要买服务器。Render 会提供 `https://xxx.onrender.com` 地址。
 
-Render 免费实例不能挂持久磁盘，并且封锁 SMTP 端口，所以不能直接使用 SQLite 和 QQ SMTP。当前代码已经支持 Postgres 和 SendGrid 的 HTTPS API。
+Render 免费实例不能挂持久磁盘，并且封锁 SMTP 端口，所以不能直接使用 SQLite 和 QQ SMTP。当前代码已经支持 Postgres 和 Mailjet 的 HTTPS API。
 
 完整步骤见 [`docs/DEPLOY.md`](docs/DEPLOY.md)。
 
@@ -102,7 +102,7 @@ Render 免费实例不能挂持久磁盘，并且封锁 SMTP 端口，所以不�
 
 - Render 免费实例闲置后休眠，首次请求可能等待 30–60 秒
 - Supabase 免费项目连续 7 天无活动会暂停
-- SendGrid 免费额度约 100 封/天
+- Mailjet 免费额度约 200 封/天，6000 封/月
 - 适合几个朋友使用，不适合大量公开用户
 
 ---
@@ -212,7 +212,7 @@ SHA256：
 - 用自己的 QQ 邮箱登录
 - 各自添加自己的 API Key
 - 账号、Session、API Key 按 `user_id` 隔离
-- 邮件验证码由你的 SendGrid 账号发出
+- 邮件验证码由你的 Mailjet 账号发出
 
 朋友不需要自己部署后端。只有希望拥有完全独立数据库时，才需要各自部署。
 
@@ -225,7 +225,7 @@ arcana-tarot/
 ├── app/                   前端源码
 ├── server/                Node.js + Express 后端
 │   ├── db.js              SQLite + Postgres 适配层
-│   ├── mail.js            console / SMTP / Brevo / SendGrid
+│   ├── mail.js            console / SMTP / Brevo / Mailjet
 │   ├── routes/            auth、keys、readings
 │   ├── services/          auth、apiKeys、providers、ai
 │   └── middleware/
@@ -262,10 +262,10 @@ npm test
 - 解读使用星标服务商
 - OpenAI 兼容、Claude、Gemini 三种协议
 - SQLite 与 Postgres 适配层
-- Brevo、SMTP2GO 与 SendGrid HTTPS 邮件请求
+- Brevo、SMTP2GO、SendGrid 与 Mailjet HTTPS 邮件请求
 - CORS
 
-自动化测试使用本地假上游、内存 Postgres（pg-mem）和模拟邮件响应。真实 Supabase、SendGrid 发信仍需要你自己的账号。
+自动化测试使用本地假上游、内存 Postgres（pg-mem）和模拟邮件响应。真实 Supabase、Mailjet 发信仍需要你自己的账号。
 
 ---
 
