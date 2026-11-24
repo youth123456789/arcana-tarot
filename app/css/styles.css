@@ -1010,14 +1010,17 @@ h1, h2, h3 {
 
 /* Content-sized jelly CTA, placed after the reading copy. */
 .home-cta {
-  position: relative;
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(18% + var(--safe-bottom));
   z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: none;
-  width: 100%;
-  margin-top: clamp(22px, 4.4vh, 42px);
+  width: auto;
+  margin-top: 0;
 }
 
 .jelly-btn {
@@ -5563,7 +5566,7 @@ h1, h2, h3 {
 .card-face.deck-style--rider .card-face__name { text-shadow: 0 1px 4px rgba(255, 244, 222, .5); }
 .card-face.deck-style--terracotta .card-face__material,
 .card-face.deck-style--rider .card-face__material { mix-blend-mode: multiply; }
-.card-back { position: relative; overflow: hidden; }
+.card-back { overflow: hidden; }
 .card-back { --deck-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='.55'/%3E%3C/svg%3E"); }
 .card-back::before {
   content: "";
@@ -5575,7 +5578,8 @@ h1, h2, h3 {
   pointer-events: none;
   mix-blend-mode: overlay;
 }
-.card-back__star, .card-back__dot { position: relative; z-index: 1; }
+.card-back__star { z-index: 2; }
+.card-back__dot { z-index: 1; }
 @keyframes deck-foil-drift {
   0% { background-position: 0% 50%, 0% 50%, 0 0; }
   100% { background-position: 200% 50%, 200% 50%, 0 0; }
@@ -5834,4 +5838,25 @@ h1, h2, h3 {
 }
 @media (prefers-reduced-motion: reduce) {
   .card-face.deck-style--aurora { animation: none; }
+}
+
+/* Static deck rendering: Android WebView repaints animated blend layers heavily. */
+.deck-card .card-face,
+.deck-card .card-face__material,
+.deck-detail .card-face,
+.deck-detail .card-face__material,
+.deck-all-grid .card-face,
+.deck-all-grid .card-face__material,
+.spread-preview .card-face,
+.spread-preview .card-face__material {
+  animation: none !important;
+}
+.deck-card .card-face__material,
+.deck-detail .card-face__material { transition: none; }
+
+@media (max-height: 700px) {
+  .home-cta { bottom: calc(13% + var(--safe-bottom)); }
+  .home-copy h1 { font-size: clamp(28px, 8vw, 34px); }
+  .home-sub { margin-top: 10px; font-size: 11px; }
+  .oracle { width: min(54vw, 21vh, 190px); height: min(54vw, 21vh, 190px); }
 }

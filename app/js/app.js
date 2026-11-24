@@ -246,12 +246,13 @@
     saveDeckPreferences();
   }
 
-  async function loadDecks() {
+  async function loadDecks(options) {
+    options = options || {};
     if (!window.ArcanaAPI || !ArcanaAPI.getToken()) return;
     try {
       var payload = await ArcanaAPI.getDecks();
       applyDeckState(payload);
-      if (state.profileOpen) renderProfile();
+      if (state.profileOpen && options.render !== false) renderProfile();
     } catch (error) {
       if (error.status !== 401) console.warn('[decks]', error.message);
     }
@@ -2373,7 +2374,7 @@
       state.authUser = me.user;
       await loadProviders();
       await loadKeys();
-      await loadDecks();
+      await loadDecks({ render: false });
     } catch (error) {
       if (error.status === 401) {
         ArcanaAPI.clearToken();
@@ -2914,7 +2915,7 @@
       state.profileView = 'account';
       await loadProviders();
       await loadKeys();
-      await loadDecks();
+      await loadDecks({ render: false });
       renderProfile();
       showToast('已绑定 ' + result.user.email);
     } catch (error) {
@@ -3532,6 +3533,81 @@
     document.head.appendChild(link);
   }
 
+  function navigateBack() {
+    if (state.deckPurchaseOpen) {
+      closeDeckPurchase();
+      return;
+    }
+    if (state.profileOpen) {
+      if (state.deckDetail) {
+        closeDeckDetail();
+        return;
+      }
+      if (profileSubview && profileSubview.classList.contains('is-open')) {
+        closeProfileSubview();
+        return;
+      }
+      closeProfile();
+      return;
+    }
+    if (state.pickerOpen) {
+      closePicker();
+      return;
+    }
+    if (state.screen === 'spreads') {
+      goHome();
+      return;
+    }
+    if (state.screen === 'detail') {
+      navigate('spreads');
+      return;
+    }
+    if (state.screen === 'input') {
+      navigate('detail');
+      return;
+    }
+    if (state.screen === 'spread-preview') {
+      setScreen('input');
+      return;
+    }
+    if (state.screen === 'result') {
+      retryReading();
+      return;
+    }
+    if (state.screen === 'thinking') {
+      abortReadRequest();
+      clearThinkingTimers();
+      clearThinkingError();
+      setScreen('input');
+    }
+  }
+
+  function initSwipeBack() {
+    var startX = 0;
+    var startY = 0;
+    var tracking = false;
+    var edge = 30;
+    document.addEventListener('touchstart', function (event) {
+      if (event.touches.length !== 1) return;
+      var target = event.target;
+      if (target && target.closest && target.closest('input, textarea, select, [data-no-swipe]')) return;
+      var touch = event.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      tracking = startX <= edge;
+    }, { passive: true });
+    document.addEventListener('touchend', function (event) {
+      if (!tracking) return;
+      tracking = false;
+      var touch = event.changedTouches[0];
+      if (!touch) return;
+      var dx = touch.clientX - startX;
+      var dy = touch.clientY - startY;
+      if (dx > 64 && Math.abs(dx) > Math.abs(dy) * 1.5) navigateBack();
+    }, { passive: true });
+    document.addEventListener('touchcancel', function () { tracking = false; }, { passive: true });
+  }
+
   function init() {
     app = document.getElementById('app');
     screens = document.getElementById('screens');
@@ -3551,6 +3627,7 @@
     profileSubviewTitle = document.getElementById('profileSubviewTitle');
 
     initManifest();
+    initSwipeBack();
     validateData();
     readDeckPreferences();
     renderSpreadFilters();
