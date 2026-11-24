@@ -5860,3 +5860,30 @@ h1, h2, h3 {
   .home-sub { margin-top: 10px; font-size: 11px; }
   .oracle { width: min(54vw, 21vh, 190px); height: min(54vw, 21vh, 190px); }
 }
+
+/* ===== Native mobile performance mode ===== */
+html.is-native .deck-card .card-face__material,
+html.is-native .deck-detail .card-face__material,
+html.is-native .deck-all-grid .card-face__material {
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  opacity: .12 !important;
+}
+html.is-native .deck-all-grid .card-face__image {
+  filter: none !important;
+}
+html.is-native .profile-backdrop {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgba(4, 2, 9, .82);
+}
+html.is-native .profile-subview,
+html.is-native .profile-drawer {
+  -webkit-overflow-scrolling: touch;
+}
+html.is-native .deck-card__visual,
+html.is-native .deck-all-card,
+html.is-native .deck-detail__showcase,
+html.is-native .deck-detail__samples {
+  contain: layout paint style;
+}

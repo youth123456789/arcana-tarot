@@ -31,5 +31,5 @@ store distribution and set android.allowMixedContent=false.
 If an earlier debug build is already installed and Android reports a signature
 conflict, uninstall the old ARCANA first, then install this APK.
 
-SHA256: 3604A105735921BD13FF9287BB30AABA03A41BD19A203C7D7C7EDB2CCF11C773
+SHA256: F50854FDCFBFA13BCD66DBD4B1FAEF13AC15674EF6C3891D47944FCE04CD9202
 

@@ -122,6 +122,7 @@
     deckPayment: { amount: 9.9, qrUrl: '' },
     deckBusy: false,
     deckPurchaseOpen: false,
+    avatarCache: null,
     spreadImageBusy: false,
     avatarPickerOpen: false,
     avatarBusy: false,
@@ -2248,11 +2249,30 @@
     '</div>';
   }
 
+  function readAvatarCache() {
+    try {
+      var cached = JSON.parse(window.localStorage.getItem('arcana.user') || 'null');
+      if (cached && cached.email) state.avatarCache = { email: cached.email, avatar: cached.avatar || '' };
+    } catch (error) {
+      state.avatarCache = null;
+    }
+  }
+
+  function rememberAvatar(user) {
+    if (!user || !user.email) return;
+    state.avatarCache = { email: user.email, avatar: user.avatar || '' };
+    try {
+      window.localStorage.setItem('arcana.user', JSON.stringify(state.avatarCache));
+    } catch (error) { /* storage can be unavailable */ }
+    updateProfileButton();
+  }
+
   function updateProfileButton() {
     if (!profileButton) return;
     var avatar = document.getElementById('profileAvatar');
     var dot = document.getElementById('profileDot');
-    if (avatar) avatar.innerHTML = state.authUser ? avatarMarkup(state.authUser.avatar, state.authUser.email.slice(0, 1)) : personIcon();
+    var profileUser = state.authUser || state.avatarCache;
+    if (avatar) avatar.innerHTML = profileUser ? avatarMarkup(profileUser.avatar, String(profileUser.email || '?').slice(0, 1)) : personIcon();
     if (dot) dot.hidden = !activeKey();
   }
 
@@ -2264,6 +2284,7 @@
     try {
       var result = await ArcanaAPI.updateAvatar(value);
       state.authUser = result.user;
+      rememberAvatar(result.user);
       state.avatarPickerOpen = false;
       state.avatarBusy = false;
       renderProfile();
@@ -2372,6 +2393,8 @@
     try {
       var me = await ArcanaAPI.me();
       state.authUser = me.user;
+      rememberAvatar(me.user);
+      updateProfileButton();
       await loadProviders();
       await loadKeys();
       await loadDecks({ render: false });
@@ -2380,6 +2403,8 @@
         ArcanaAPI.clearToken();
         state.authUser = null;
         state.authKeys = [];
+        state.avatarCache = null;
+        try { window.localStorage.removeItem('arcana.user'); } catch (storageError) { /* ignore */ }
       }
     } finally {
       state.authLoading = false;
@@ -2598,6 +2623,7 @@
 
   function openDeckStyle(id) {
     if (!deckStyleById(id)) return;
+    state.profileView = 'deck';
     state.deckDetail = id;
     state.deckShowAll = false;
     state.deckInvite = '';
@@ -2606,6 +2632,7 @@
   }
 
   function closeDeckDetail() {
+    state.profileView = 'deck';
     state.deckDetail = null;
     state.deckShowAll = false;
     state.deckInvite = '';
@@ -2626,6 +2653,7 @@
     try {
       var payload = await ArcanaAPI.selectDeck(id);
       applyDeckState(payload);
+      state.profileView = 'deck';
       state.deckDetail = null;
       state.deckBusy = false;
       renderProfile();
@@ -2664,6 +2692,7 @@
       state.deckInvite = '';
       state.deckInviteError = '';
       state.deckBusy = false;
+      state.profileView = 'deck';
       state.deckDetail = null;
       closeDeckPurchase();
       renderProfile();
@@ -2907,6 +2936,7 @@
     try {
       var result = await ArcanaAPI.verifyCode(state.authEmail, code);
       state.authUser = result.user;
+      rememberAvatar(result.user);
       state.authBusy = false;
       state.authError = '';
       state.authNotice = '';
@@ -3197,7 +3227,8 @@
     if (action === 'open-deck-style') {
       var pickedDeck = element ? element.getAttribute('data-deck-style') : '';
       if (isDeckUnlocked(pickedDeck)) {
-        selectDeck(pickedDeck);
+        if (state.deckStyle === pickedDeck) openDeckStyle(pickedDeck);
+        else selectDeck(pickedDeck);
       } else {
         openDeckStyle(pickedDeck);
       }
@@ -3412,6 +3443,12 @@
 
   function initEvents() {
     app.addEventListener('click', onAppClick);
+    document.addEventListener('click', function (event) {
+      var button = event.target && event.target.closest ? event.target.closest('#deckPurchase [data-action], #spreadExport [data-action]') : null;
+      if (!button) return;
+      event.preventDefault();
+      handleAction(button.getAttribute('data-action'), button);
+    });
 
     if (apiSettings) {
       apiSettings.addEventListener('click', function (event) {
@@ -3628,8 +3665,12 @@
 
     initManifest();
     initSwipeBack();
+    if ((window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      document.documentElement.classList.add('is-native');
+    }
     validateData();
     readDeckPreferences();
+    readAvatarCache();
     renderSpreadFilters();
     renderSpreadList();
     applySpreadFilter('all');
