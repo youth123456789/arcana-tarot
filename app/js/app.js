@@ -1381,12 +1381,6 @@
     if (!spread) return;
     var style = activeDeckStyle();
     var board = renderBoard(spread, { all: true, reading: true, label: 'YOUR SPREAD' });
-    var legend = spread.positions.map(function (position, index) {
-      var selection = state.selections[position.id];
-      var card = selection ? DATA.getCard(selection.cardId) : null;
-      if (!card) return '';
-      return '<div class="spread-viewer__legend-row"><span>' + pad2(index + 1) + '</span><strong>' + escapeHTML(position.name) + '</strong><small>' + escapeHTML(card.name) + ' · ' + (selection.reversed ? '逆位' : '正位') + '</small></div>';
-    }).join('');
     var host = document.getElementById('spreadViewerContent');
     if (!host) return;
     host.innerHTML = '<article class="spread-viewer__poster ' + deckStyleClass(style.id) + '">' +
@@ -1395,8 +1389,7 @@
       '<p class="spread-viewer__question">「' + escapeHTML(state.question.trim() || '') + '」</p>' +
       '<div class="spread-viewer__summary"><span>本次启示</span><p>' + escapeHTML(spreadSummaryText()) + '</p></div>' +
       '<div class="spread-viewer__stage">' + board + '</div>' +
-      '<div class="spread-viewer__legend">' + legend + '</div>' +
-      '<p class="spread-viewer__foot">' + escapeHTML(style.name) + ' · ' + latinDate(new Date()) + ' · 可截屏保存</p>' +
+      '<p class="spread-viewer__foot">' + latinDate(new Date()) + '</p>' +
     '</article>';
   }
 

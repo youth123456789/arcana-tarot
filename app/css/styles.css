@@ -5463,9 +5463,9 @@ h1, h2, h3 {
 }
 .spread-viewer__poster {
   position: relative;
-  max-width: 480px;
+  max-width: 540px;
   margin: 0 auto;
-  padding: 24px 20px 20px;
+  padding: 22px 12px 18px;
   border: 1px solid rgba(226, 201, 165, .2);
   border-radius: 18px;
   background:
@@ -5503,26 +5503,28 @@ h1, h2, h3 {
   line-height: 1.7;
 }
 .spread-viewer__summary {
-  margin-top: 18px;
-  padding: 13px 14px 13px 16px;
+  margin-top: 20px;
+  padding: 15px 16px 15px 18px;
   border-left: 1px solid rgba(226, 201, 165, .56);
   border-radius: 0 10px 10px 0;
   background: linear-gradient(90deg, rgba(226, 201, 165, .08), transparent);
 }
 .spread-viewer__summary span {
-  color: rgba(226, 201, 165, .6);
+  color: rgba(226, 201, 165, .72);
   font-family: var(--latin);
-  font-size: 8px;
-  letter-spacing: .2em;
+  font-size: 9px;
+  letter-spacing: .22em;
 }
 .spread-viewer__summary p {
-  margin-top: 7px;
+  margin-top: 8px;
   color: var(--ink-soft);
   font-family: var(--serif);
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 18px;
+  line-height: 1.75;
+  letter-spacing: .02em;
 }
-.spread-viewer__stage { margin-top: 18px; }
+.spread-viewer__stage { margin-top: 20px; }
+.spread-viewer__stage .board { width: 100%; }
 .spread-viewer__stage .board__label { font-size: 5px; }
 .spread-viewer__legend {
   display: grid;
@@ -5542,7 +5544,7 @@ h1, h2, h3 {
 .spread-viewer__legend-row > span { color: var(--gold-soft); font-family: var(--latin); font-size: 8px; }
 .spread-viewer__legend-row strong { display: block; overflow: hidden; color: var(--ink-soft); font-family: var(--serif); font-size: 11px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .spread-viewer__legend-row small { display: block; overflow: hidden; margin-top: 1px; color: var(--faint); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.spread-viewer__foot { margin-top: 18px; color: var(--faint); font-family: var(--latin); font-size: 8px; letter-spacing: .08em; text-align: center; }
+.spread-viewer__foot { margin-top: 22px; color: rgba(226, 201, 165, .55); font-family: var(--latin); font-size: 9px; letter-spacing: .16em; text-align: center; }
 
 /* ===== Deck material language ===== */
 .card-face {
@@ -6027,4 +6029,18 @@ html.is-native .deck-all-card,
 html.is-native .deck-detail__showcase,
 html.is-native .deck-detail__samples {
   contain: layout paint style;
+}
+
+/* Result actions: equal width, same button scale */
+.bottom-dock--result .bottom-dock__inner--actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.bottom-dock--result .bottom-dock__inner--actions .jelly-btn {
+  width: 100%;
+  min-width: 0;
+  padding-left: 12px;
+  padding-right: 12px;
 }
