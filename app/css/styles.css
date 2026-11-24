@@ -5878,9 +5878,6 @@ html.is-native .deck-all-grid .card-face__material {
   filter: none !important;
   opacity: .12 !important;
 }
-html.is-native .deck-all-grid .card-face__image {
-  filter: none !important;
-}
 html.is-native .profile-backdrop {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -5889,6 +5886,10 @@ html.is-native .profile-backdrop {
 html.is-native .profile-subview,
 html.is-native .profile-drawer {
   -webkit-overflow-scrolling: touch;
+}
+html.is-native .deck-all-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 72px 120px;
 }
 html.is-native .deck-card__visual,
 html.is-native .deck-all-card,

@@ -126,6 +126,7 @@
     spreadImageBusy: false,
     spreadImageBlob: null,
     spreadImageName: 'arcana-spread.png',
+    spreadImageDataUrl: '',
     avatarPickerOpen: false,
     avatarBusy: false,
     thinkingStartedAt: 0,
@@ -1366,12 +1367,23 @@
       try { URL.revokeObjectURL(preview.src); } catch (error) { /* ignore */ }
     }
     state.spreadImageBlob = null;
+    state.spreadImageDataUrl = '';
     if (preview) preview.removeAttribute('src');
   }
 
   function triggerSpreadDownload() {
     var blob = state.spreadImageBlob;
     if (!blob) {
+      if (state.spreadImageDataUrl) {
+        var dataLink = document.createElement('a');
+        dataLink.href = state.spreadImageDataUrl;
+        dataLink.download = state.spreadImageName || 'arcana-spread.png';
+        document.body.appendChild(dataLink);
+        dataLink.click();
+        dataLink.remove();
+        showToast('图片已生成，若没有保存，请长按图片保存');
+        return;
+      }
       showToast('牌阵图片还没有生成完成。');
       return;
     }
@@ -1522,9 +1534,15 @@
       ctx.fillText('ARCANA  ·  ' + style.name + '  ·  ' + new Date().toLocaleDateString('zh-CN'), side, height - 44);
       ctx.globalAlpha = 1;
 
-      var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+      var blob = null;
+      if (typeof canvas.toBlob === 'function') {
+        try {
+          blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+        } catch (error) { blob = null; }
+      }
       var dataUrl = blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png');
       state.spreadImageBlob = blob || null;
+      state.spreadImageDataUrl = blob ? '' : dataUrl;
       state.spreadImageName = 'arcana-' + spread.id + '-' + style.id + '.png';
       var preview = document.getElementById('spreadExportPreview');
       if (preview) preview.src = dataUrl;
@@ -2600,8 +2618,7 @@
         '</button>' +
       '</div>';
     }
-    return '<button class="text-btn deck-back" type="button" data-action="close-deck-detail">← 返回牌库</button>' +
-      '<div class="deck-detail__hero">' +
+    return '<div class="deck-detail__hero">' +
         '<div class="deck-detail__showcase">' + deckSampleMarkup(style.id, 'major-18') + '</div>' +
         '<div class="deck-detail__info"><p class="eyebrow"><span class="eyebrow__line"></span>TAROT DECK · 78 CARDS</p>' +
           '<h3>' + escapeHTML(style.name) + '</h3><small>' + escapeHTML(style.en) + '</small>' +
@@ -3260,7 +3277,8 @@
       return;
     }
     if (action === 'profile-back') {
-      closeProfileSubview();
+      if (state.profileView === 'deck' && state.deckDetail) closeDeckDetail();
+      else closeProfileSubview();
       return;
     }
     if (action === 'cancel-edit-key') {
@@ -3489,6 +3507,14 @@
 
   function initEvents() {
     app.addEventListener('click', onAppClick);
+    var saveSpreadButton = document.getElementById('saveSpreadBtn');
+    if (saveSpreadButton) {
+      saveSpreadButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        saveSpreadImage();
+      });
+    }
     document.addEventListener('click', function (event) {
       var button = event.target && event.target.closest ? event.target.closest('#deckPurchase [data-action], #spreadExport [data-action]') : null;
       if (!button) return;
