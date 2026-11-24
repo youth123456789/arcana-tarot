@@ -2959,6 +2959,8 @@
     await ArcanaAPI.logout();
     state.authUser = null;
     state.authKeys = [];
+    state.avatarCache = null;
+    try { window.localStorage.removeItem('arcana.user'); } catch (error) { /* ignore */ }
     state.authCodeSent = false;
     state.authCode = '';
     state.authError = '';
