@@ -127,6 +127,7 @@
     spreadImageBlob: null,
     spreadImageName: 'arcana-spread.png',
     spreadImageDataUrl: '',
+    spreadViewerOpen: false,
     avatarPickerOpen: false,
     avatarBusy: false,
     thinkingStartedAt: 0,
@@ -1357,6 +1358,62 @@
       ctx.fillRect(x, y, w, h);
     }
     ctx.restore();
+  }
+
+  function spreadSummaryText() {
+    var reading = state.reading;
+    if (!reading) return '牌面已经把此刻的答案放在你面前。';
+    var core = reading.core || {};
+    if (core.title) return String(core.title).replace(/[。.!！?？]+$/, '') + '。';
+    if (core.body) {
+      var match = String(core.body).match(/^[^。！？.!?]+[。！？.!?]?/);
+      if (match) return match[0];
+    }
+    if (reading.narrative && reading.narrative.length) {
+      var sentence = String(reading.narrative[0]).match(/^[^。！？.!?]+[。！？.!?]?/);
+      if (sentence) return sentence[0];
+    }
+    return '牌面已经把此刻的答案放在你面前。';
+  }
+
+  function renderSpreadViewer() {
+    var spread = state.spread;
+    if (!spread) return;
+    var style = activeDeckStyle();
+    var board = renderBoard(spread, { all: true, reading: true, label: 'YOUR SPREAD' });
+    var legend = spread.positions.map(function (position, index) {
+      var selection = state.selections[position.id];
+      var card = selection ? DATA.getCard(selection.cardId) : null;
+      if (!card) return '';
+      return '<div class="spread-viewer__legend-row"><span>' + pad2(index + 1) + '</span><strong>' + escapeHTML(position.name) + '</strong><small>' + escapeHTML(card.name) + ' · ' + (selection.reversed ? '逆位' : '正位') + '</small></div>';
+    }).join('');
+    var host = document.getElementById('spreadViewerContent');
+    if (!host) return;
+    host.innerHTML = '<article class="spread-viewer__poster ' + deckStyleClass(style.id) + '">' +
+      '<p class="spread-viewer__eyebrow">ARCANA · THE SPREAD</p>' +
+      '<h1>' + escapeHTML(spread.name) + '</h1>' +
+      '<p class="spread-viewer__question">「' + escapeHTML(state.question.trim() || '') + '」</p>' +
+      '<div class="spread-viewer__summary"><span>本次启示</span><p>' + escapeHTML(spreadSummaryText()) + '</p></div>' +
+      '<div class="spread-viewer__stage">' + board + '</div>' +
+      '<div class="spread-viewer__legend">' + legend + '</div>' +
+      '<p class="spread-viewer__foot">' + escapeHTML(style.name) + ' · ' + latinDate(new Date()) + ' · 可截屏保存</p>' +
+    '</article>';
+  }
+
+  function openSpreadViewer() {
+    if (!state.spread) return;
+    state.spreadViewerOpen = true;
+    renderSpreadViewer();
+    var viewer = document.getElementById('spreadViewer');
+    if (viewer) viewer.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function closeSpreadViewer() {
+    state.spreadViewerOpen = false;
+    var viewer = document.getElementById('spreadViewer');
+    if (viewer) viewer.hidden = true;
+    document.documentElement.style.overflow = '';
   }
 
   function closeSpreadExport() {
@@ -2661,6 +2718,7 @@
     var style = deckStyleById(state.deckDetail);
     if (!style || isDeckUnlocked(style.id)) return;
     state.deckPurchaseOpen = true;
+    document.documentElement.style.overflow = 'hidden';
     state.deckInvite = '';
     state.deckInviteError = '';
     renderDeckPurchase();
@@ -2674,6 +2732,7 @@
 
   function closeDeckPurchase() {
     state.deckPurchaseOpen = false;
+    document.documentElement.style.overflow = '';
     state.deckInviteError = '';
     var modal = document.getElementById('deckPurchase');
     if (modal) modal.hidden = true;
@@ -3349,6 +3408,14 @@
       beginReading();
       return;
     }
+    if (action === 'view-spread') {
+      openSpreadViewer();
+      return;
+    }
+    if (action === 'close-spread-viewer') {
+      closeSpreadViewer();
+      return;
+    }
     if (action === 'save-spread') {
       saveSpreadImage();
       return;
@@ -3507,16 +3574,16 @@
 
   function initEvents() {
     app.addEventListener('click', onAppClick);
-    var saveSpreadButton = document.getElementById('saveSpreadBtn');
-    if (saveSpreadButton) {
-      saveSpreadButton.addEventListener('click', function (event) {
+    var viewSpreadButton = document.getElementById('viewSpreadBtn');
+    if (viewSpreadButton) {
+      viewSpreadButton.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation();
-        saveSpreadImage();
+        openSpreadViewer();
       });
     }
     document.addEventListener('click', function (event) {
-      var button = event.target && event.target.closest ? event.target.closest('#deckPurchase [data-action], #spreadExport [data-action]') : null;
+      var button = event.target && event.target.closest ? event.target.closest('#deckPurchase [data-action], #spreadExport [data-action], #spreadViewer [data-action]') : null;
       if (!button) return;
       event.preventDefault();
       handleAction(button.getAttribute('data-action'), button);
@@ -3643,6 +3710,10 @@
   }
 
   function navigateBack() {
+    if (state.spreadViewerOpen) {
+      closeSpreadViewer();
+      return;
+    }
     if (state.deckPurchaseOpen) {
       closeDeckPurchase();
       return;

@@ -247,7 +247,13 @@
         <div class="page page--result" id="resultContent"></div>
         <div class="bottom-dock bottom-dock--result" id="resultDock">
           <div class="bottom-dock__inner bottom-dock__inner--actions">
-            <button class="btn btn--ghost btn--pill" id="saveSpreadBtn" type="button" data-action="save-spread">保存牌阵</button>
+            <button class="jelly-btn jelly-btn--compact jelly-btn--view" id="viewSpreadBtn" type="button" data-action="view-spread">
+              <span class="jelly-btn__glow" aria-hidden="true"></span>
+              <span class="jelly-btn__text">
+                <strong>查看牌阵</strong>
+                <small>VIEW THE SPREAD</small>
+              </span>
+            </button>
             <button class="jelly-btn jelly-btn--compact" type="button" data-action="new">
               <span class="jelly-btn__glow" aria-hidden="true"></span>
               <span class="jelly-btn__text">
@@ -367,6 +373,13 @@
       </button>
       <p class="profile-error" id="deckPurchaseError"></p>
     </section>
+  </div>
+
+  <div class="spread-viewer" id="spreadViewer" hidden>
+    <button class="spread-viewer__close" type="button" data-action="close-spread-viewer" aria-label="关闭牌阵">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+    <div class="spread-viewer__scroll" id="spreadViewerContent"></div>
   </div>
 
   <div class="spread-export" id="spreadExport" hidden>
