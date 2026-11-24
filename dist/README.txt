@@ -1,4 +1,4 @@
-ARCANA · Android 0.4.0 (debug)
+ARCANA 路 Android 0.4.0 (debug)
 
 Package: com.arcana.tarot
 Version: 0.4.0 (versionCode 4)
@@ -12,11 +12,11 @@ Install:
 2. The app needs a deployed ARCANA backend (QQ email code + API key storage
    live on the server; the APK intentionally contains no API keys).
 3. Tap the avatar in the top-right of the home screen.
-4. If the build has no baked backend URL, open "服务地址" at the bottom of
+4. If the build has no baked backend URL, open "鏈嶅姟鍦板潃" at the bottom of
    the personal center and enter the HTTPS backend URL.
 5. Login with your QQ email code.
-6. Open API 配置, choose a provider/model, paste your own API key, tap
-   "添加 API", then tap the star to make it active.
+6. Open API 閰嶇疆, choose a provider/model, paste your own API key, tap
+   "娣诲姞 API", then tap the star to make it active.
 
 Backend setup:
 See ../README.md and ../docs/ANDROID.md.
@@ -31,4 +31,5 @@ store distribution and set android.allowMixedContent=false.
 If an earlier debug build is already installed and Android reports a signature
 conflict, uninstall the old ARCANA first, then install this APK.
 
-SHA256: 0887E6D1468815B1774F01EBA5AFAFC939F78D395680CCC85ACB34A707E747EC
+SHA256: B7539747B45A3912FE6EB06B664402183A85FF7D0C4B0D1ED3D0976AA65AF3BD
+

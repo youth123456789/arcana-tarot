@@ -21,7 +21,11 @@
 
 | API 配置 | 我的塔罗牌 |
 | --- | --- |
-| ![API 配置](docs/previews/preview-profile-keys.png) | ![我的塔罗牌](docs/previews/preview-profile-deck.png) |
+| ![API 配置](docs/previews/preview-profile-keys.png) | ![牌库](docs/previews/preview-deck-gallery.png) |
+
+| 牌面详情 | 全部 78 张 |
+| --- | --- |
+| ![牌面详情](docs/previews/preview-deck-detail.png) | ![全部牌面](docs/previews/preview-deck-all.png) |
 
 | 选择牌阵 | 解读结果 |
 | --- | --- |
@@ -83,13 +87,20 @@ DeepSeek、OpenAI、Anthropic Claude、Google Gemini、阿里云百炼 Qwen、Mo
 
 ### 我的塔罗牌
 
-当前提供三种牌面占位：
+当前提供 8 套牌面风格，默认使用韦特·经典。
 
-- 韦特经典
-- 镭射铂金玫瑰
-- 孔雀石绿镭射
+- 韦特·经典：免费
+- 铂金玫瑰·棱镜：¥9.9
+- 孔雀石·绿境：¥9.9
+- 月蚀银辉：¥9.9
+- 鎏金圣殿：¥9.9
+- 深海星图：¥9.9
+- 赤陶秘境：¥9.9
+- 极光棱镜：¥9.9
 
-后续版本会替换应用内的塔罗卡牌，保留同一套牌义与牌阵。
+每套风格可预览全部 78 张牌，并可应用到实际抽牌界面。付费牌面支持收款码占位与邀请码解锁；当前为前端演示，正式支付和邀请码校验待后端接入。
+
+完整名称、演示邀请码和接入计划见 [`docs/DECKS.md`](docs/DECKS.md)。
 
 ---
 
@@ -206,7 +217,7 @@ adb install -r dist/arcana-0.4.0-debug.apk
 SHA256：
 
 ```text
-0887E6D1468815B1774F01EBA5AFAFC939F78D395680CCC85ACB34A707E747EC
+B7539747B45A3912FE6EB06B664402183A85FF7D0C4B0D1ED3D0976AA65AF3BD
 ```
 
 如果安装过更早的测试包并提示签名冲突，先卸载旧版。
@@ -245,6 +256,7 @@ arcana-tarot/
 │   ├── DEPLOY.md
 │   ├── ANDROID.md
 │   ├── PROVIDERS.md
+│   ├── DECKS.md
 │   └── previews/
 ├── test/                  SQLite、Postgres、邮件测试
 ├── dist/                  APK
@@ -296,4 +308,5 @@ npm test
 - [`docs/DEPLOY.md`](docs/DEPLOY.md)：免费部署完整步骤
 - [`docs/ANDROID.md`](docs/ANDROID.md)：APK 构建、安装、签名
 - [`docs/PROVIDERS.md`](docs/PROVIDERS.md)：服务商与模型
+- [`docs/DECKS.md`](docs/DECKS.md)：牌面风格、价格与前端邀请码
 - [`PRIVACY.md`](PRIVACY.md)：隐私说明

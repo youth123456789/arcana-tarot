@@ -113,6 +113,12 @@
     keyBusy: '',
     keyError: '',
     profileView: 'main',
+    deckStyle: 'rider',
+    unlockedDecks: ['rider'],
+    deckDetail: null,
+    deckShowAll: false,
+    deckInvite: '',
+    deckInviteError: '',
     avatarPickerOpen: false,
     avatarBusy: false,
     thinkingStartedAt: 0,
@@ -123,6 +129,96 @@
     resultTimer: null,
     toastTimer: null
   };
+
+  var DECK_STYLES = [
+    {
+      id: 'rider', name: '韦特·经典', en: 'RIDER–WAITE', price: 0, free: true,
+      tagline: '羊皮纸、墨线与旧金，最经典的韦特秩序。',
+      note: '公共牌义 · 完整 78 张',
+      invite: ''
+    },
+    {
+      id: 'rose', name: '铂金玫瑰·棱镜', en: 'PRISM ROSE', price: 9.9,
+      tagline: '黑曜石底上浮起玫瑰金，像月光穿过棱镜。',
+      note: '镭射铂金 · 完整 78 张',
+      invite: 'ROSE-PRISM'
+    },
+    {
+      id: 'malachite', name: '孔雀石·绿境', en: 'MALACHITE', price: 9.9,
+      tagline: '深绿矿石的纹理，金色脉络在其中缓慢生长。',
+      note: '孔雀石绿 · 完整 78 张',
+      invite: 'MALACHITE-GREEN'
+    },
+    {
+      id: 'eclipse', name: '月蚀银辉', en: 'ECLIPSE SILVER', price: 9.9,
+      tagline: '银月被阴影咬去一角，留下冷冽的星尘。',
+      note: '银灰月相 · 完整 78 张',
+      invite: 'ECLIPSE-MOON'
+    },
+    {
+      id: 'gilded', name: '鎏金圣殿', en: 'GILDED SANCTUM', price: 9.9,
+      tagline: '黑金拱门与几何日轮，像一座沉默的圣殿。',
+      note: '黑金装饰 · 完整 78 张',
+      invite: 'GILDED-SUN'
+    },
+    {
+      id: 'abyss', name: '深海星图', en: 'ABYSSAL ATLAS', price: 9.9,
+      tagline: '深海蓝的星图，潮汐与星座共享同一套坐标。',
+      note: '深海星图 · 完整 78 张',
+      invite: 'ABYSS-STAR'
+    },
+    {
+      id: 'terracotta', name: '赤陶秘境', en: 'TERRACOTTA', price: 9.9,
+      tagline: '赤陶、沙砾与手绘几何，像从旧文明里挖出的牌。',
+      note: '赤陶手绘 · 完整 78 张',
+      invite: 'TERRACOTTA-CLAY'
+    },
+    {
+      id: 'aurora', name: '极光棱镜', en: 'AURORA PRISM', price: 9.9,
+      tagline: '紫青极光在玻璃卡面上流动，冷静又迷幻。',
+      note: '极光玻璃 · 完整 78 张',
+      invite: 'AURORA-LIGHT'
+    }
+  ];
+
+  function deckStyleById(id) {
+    return DECK_STYLES.filter(function (item) { return item.id === id; })[0] || null;
+  }
+
+  function readDeckPreferences() {
+    var styleId = '';
+    var unlocked = ['rider'];
+    try {
+      styleId = window.localStorage.getItem('arcana.deckStyle') || '';
+      var saved = JSON.parse(window.localStorage.getItem('arcana.unlockedDecks') || '[]');
+      if (Array.isArray(saved)) {
+        saved.forEach(function (id) {
+          if (deckStyleById(id) && unlocked.indexOf(id) === -1) unlocked.push(id);
+        });
+      }
+    } catch (error) { /* ignore */ }
+    state.unlockedDecks = unlocked;
+    state.deckStyle = (deckStyleById(styleId) && unlocked.indexOf(styleId) > -1) ? styleId : 'rider';
+  }
+
+  function saveDeckPreferences() {
+    try {
+      window.localStorage.setItem('arcana.deckStyle', state.deckStyle);
+      window.localStorage.setItem('arcana.unlockedDecks', JSON.stringify(state.unlockedDecks));
+    } catch (error) { /* ignore */ }
+  }
+
+  function isDeckUnlocked(id) {
+    return id === 'rider' || state.unlockedDecks.indexOf(id) > -1;
+  }
+
+  function activeDeckStyle() {
+    return deckStyleById(state.deckStyle) || DECK_STYLES[0];
+  }
+
+  function deckStyleClass(id) {
+    return 'deck-style--' + (deckStyleById(id) ? id : 'rider');
+  }
 
   var app;
   var screens;
@@ -599,8 +695,9 @@
   /* =========================================================
      Card art
      ========================================================= */
-  function cardFaceMarkup(card, reversed) {
-    return '<span class="card-face card-suit--' + card.suitKey + (reversed ? ' is-reversed' : '') + '">' +
+  function cardFaceMarkup(card, reversed, styleId) {
+    var style = deckStyleById(styleId || state.deckStyle) || DECK_STYLES[0];
+    return '<span class="card-face ' + deckStyleClass(style.id) + ' card-suit--' + card.suitKey + (reversed ? ' is-reversed' : '') + '">' +
       '<span class="card-face__numeral">' + escapeHTML(card.numeral) + '</span>' +
       '<span class="card-face__numeral card-face__numeral--br">' + escapeHTML(card.numeral) + '</span>' +
       '<span class="card-face__art">' + iconMarkup(card.glyph) + '</span>' +
@@ -615,8 +712,9 @@
     '</span>';
   }
 
-  function cardBackMarkup() {
-    return '<span class="card-back">' +
+  function cardBackMarkup(styleId) {
+    var style = deckStyleById(styleId || state.deckStyle) || DECK_STYLES[0];
+    return '<span class="card-back ' + deckStyleClass(style.id) + '">' +
       '<span class="card-back__star">' + iconMarkup('star') + '</span>' +
       '<i class="card-back__dot card-back__dot--a"></i>' +
       '<i class="card-back__dot card-back__dot--b"></i>' +
@@ -1982,13 +2080,127 @@
     '</div>';
   }
 
+  function deckSampleMarkup(styleId, cardId) {
+    var card = DATA.getCard(cardId || 'major-18') || DATA.cards[0];
+    return '<span class="deck-sample">' + cardFaceMarkup(card, false, styleId) + '</span>';
+  }
+
+  function renderDeckGallery() {
+    var cards = DECK_STYLES.map(function (style, index) {
+      var unlocked = isDeckUnlocked(style.id);
+      var selected = state.deckStyle === style.id;
+      var badge = style.free ? '免费' : unlocked ? '已解锁' : '¥9.9';
+      return '<button class="deck-card' + (selected ? ' is-selected' : '') + '" type="button" data-action="open-deck-style" data-deck-style="' + style.id + '" style="--i:' + index + '">' +
+        '<span class="deck-card__visual">' + deckSampleMarkup(style.id, 'major-18') +
+          (selected ? '<span class="deck-card__selected">使用中</span>' : '') +
+          (!unlocked ? '<span class="deck-card__lock">' + lockIcon() + '</span>' : '') +
+        '</span>' +
+        '<span class="deck-card__name">' + escapeHTML(style.name) + '</span>' +
+        '<span class="deck-card__en">' + escapeHTML(style.en) + '</span>' +
+        '<span class="deck-card__badge' + (unlocked ? ' is-unlocked' : '') + '">' + badge + '</span>' +
+      '</button>';
+    }).join('');
+    return '<div class="deck-intro"><p class="eyebrow"><span class="eyebrow__line"></span>TAROT ATELIER</p><p>每种牌面都是一套独立的视觉语言，牌义与牌阵保持一致。点击牌面预览，选择你此刻想使用的版本。</p></div>' +
+      '<div class="deck-gallery">' + cards + '</div>' +
+      '<p class="key-form__hint">默认使用韦特经典。其他牌面 ¥9.9/套，可使用对应邀请码解锁；当前为前端预览，支付与邀请码校验将在后端接入。</p>';
+  }
+
+  function lockIcon() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>';
+  }
+
+  function renderDeckDetail() {
+    var style = deckStyleById(state.deckDetail);
+    if (!style) return renderDeckGallery();
+    var unlocked = isDeckUnlocked(style.id);
+    var selected = state.deckStyle === style.id;
+    var samples = ['major-18', 'major-17', 'major-0', 'cups-01', 'wands-01', 'pentacles-01'].map(function (id) {
+      return deckSampleMarkup(style.id, id);
+    }).join('');
+    var all = '';
+    if (state.deckShowAll) {
+      all = '<div class="deck-all-grid">' + DATA.cards.map(function (card) {
+        return '<span class="deck-all-card">' + cardFaceMarkup(card, false, style.id) + '</span>';
+      }).join('') + '</div>';
+    }
+    var action;
+    if (!unlocked) {
+      action = '<div class="deck-purchase">' +
+        '<div class="deck-purchase__qr"><span>收款码</span><small>后端接入后配置</small></div>' +
+        '<div class="deck-purchase__copy"><strong>¥9.9 解锁「' + escapeHTML(style.name) + '」</strong><p>扫码支付后向作者索取专属邀请码；输入邀请码即可在本机解锁。</p></div>' +
+        '<div class="deck-purchase__code"><input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入邀请码" value="' + escapeHTML(state.deckInvite) + '"><button class="text-btn" type="button" data-action="unlock-deck">验证</button></div>' +
+        (state.deckInviteError ? '<p class="profile-error">' + escapeHTML(state.deckInviteError) + '</p>' : '') +
+      '</div>';
+    } else {
+      action = '<button class="jelly-btn jelly-btn--compact deck-select-btn" type="button" data-action="select-deck" data-deck-style="' + style.id + '"' + (selected ? ' disabled' : '') + '>' +
+        '<span class="jelly-btn__glow" aria-hidden="true"></span><span class="jelly-btn__text"><strong>' + (selected ? '正在使用' : '使用这套牌') + '</strong><small>' + (selected ? 'CURRENT DECK' : 'USE THIS DECK') + '</small></span>' +
+      '</button>';
+    }
+    return '<button class="text-btn deck-back" type="button" data-action="close-deck-detail">← 返回牌库</button>' +
+      '<div class="deck-detail__hero">' +
+        '<div class="deck-detail__showcase">' + deckSampleMarkup(style.id, 'major-18') + '</div>' +
+        '<div class="deck-detail__info"><p class="eyebrow"><span class="eyebrow__line"></span>' + (style.free ? 'FREE DECK' : 'PREMIUM DECK') + '</p>' +
+          '<h3>' + escapeHTML(style.name) + '</h3><small>' + escapeHTML(style.en) + '</small>' +
+          '<p>' + escapeHTML(style.tagline) + '</p><em>' + escapeHTML(style.note) + '</em></div>' +
+      '</div>' +
+      '<div class="deck-detail__samples">' + samples + '</div>' +
+      '<button class="text-btn deck-all-toggle" type="button" data-action="toggle-deck-all">' + (state.deckShowAll ? '收起全部牌面' : '查看全部 78 张牌') + '</button>' +
+      all + action;
+  }
+
+  function openDeckStyle(id) {
+    if (!deckStyleById(id)) return;
+    state.deckDetail = id;
+    state.deckShowAll = false;
+    state.deckInvite = '';
+    state.deckInviteError = '';
+    renderProfile();
+  }
+
+  function closeDeckDetail() {
+    state.deckDetail = null;
+    state.deckShowAll = false;
+    state.deckInvite = '';
+    state.deckInviteError = '';
+    renderProfile();
+  }
+
+  function selectDeck(id) {
+    if (!deckStyleById(id) || !isDeckUnlocked(id)) return;
+    state.deckStyle = id;
+    state.deckDetail = null;
+    saveDeckPreferences();
+    renderProfile();
+    showToast('已切换为「' + deckStyleById(id).name + '」');
+  }
+
+  function unlockDeck() {
+    var style = deckStyleById(state.deckDetail);
+    if (!style) return;
+    var input = document.getElementById('deckInvite');
+    if (input) state.deckInvite = input.value;
+    var code = String(state.deckInvite || '').trim().toUpperCase();
+    if (!code) {
+      state.deckInviteError = '请输入邀请码。';
+      renderProfile();
+      return;
+    }
+    if (code !== String(style.invite || '').toUpperCase()) {
+      state.deckInviteError = '邀请码不正确。';
+      renderProfile();
+      return;
+    }
+    if (state.unlockedDecks.indexOf(style.id) === -1) state.unlockedDecks.push(style.id);
+    state.deckStyle = style.id;
+    state.deckInvite = '';
+    state.deckInviteError = '';
+    saveDeckPreferences();
+    renderProfile();
+    showToast('「' + style.name + '」已解锁并切换');
+  }
+
   function renderDeckContent() {
-    return '<div class="deck-grid">' +
-      '<article class="deck-tile deck-tile--rider"><span class="deck-tile__art"></span><strong>韦特经典</strong><small>RIDER–WAITE</small><em>即将开放</em></article>' +
-      '<article class="deck-tile deck-tile--rose"><span class="deck-tile__art"></span><strong>镭射铂金玫瑰</strong><small>PRISM ROSE</small><em>即将开放</em></article>' +
-      '<article class="deck-tile deck-tile--malachite"><span class="deck-tile__art"></span><strong>孔雀石绿镭射</strong><small>MALACHITE</small><em>即将开放</em></article>' +
-    '</div>' +
-    '<p class="key-form__hint">牌面会替换应用内的塔罗卡牌，保留同一套牌义与牌阵；样式切换将在后续版本开放。</p>';
+    return state.deckDetail ? renderDeckDetail() : renderDeckGallery();
   }
 
   function starMarkup() {
@@ -2019,10 +2231,11 @@
     var active = activeKey();
     var title = isAccount ? '绑定 QQ 邮箱' : isApi ? 'API 配置' : '我的塔罗牌';
     var summary;
+    var deckSummary = activeDeckStyle().name + ' · 8 套牌面';
     if (isAccount) summary = state.authUser ? state.authUser.email : '未绑定 · 点击登录';
-    else if (!state.authUser) summary = isApi ? '绑定邮箱后配置' : '3 款牌面 · 即将开放';
+    else if (!state.authUser) summary = isApi ? '绑定邮箱后配置' : deckSummary;
     else if (isApi) summary = active ? active.providerName + ' · ' + active.model : (state.authKeys.length ? state.authKeys.length + ' 个配置' : '还没有配置');
-    else summary = '3 款牌面 · 即将开放';
+    else summary = deckSummary;
     return '<button class="profile-menu-row" type="button" data-action="open-profile-' + kind + '">' +
       '<span class="profile-menu-row__icon">' + menuIcon(kind) + '</span>' +
       '<span class="profile-menu-row__main"><strong>' + title + '</strong><small>' + escapeHTML(summary) + '</small></span>' +
@@ -2073,6 +2286,12 @@
 
   function openProfileSubview(kind) {
     if (!profileSubview) return;
+    if (kind === 'deck') {
+      state.deckDetail = null;
+      state.deckShowAll = false;
+      state.deckInvite = '';
+      state.deckInviteError = '';
+    }
     state.profileView = kind;
     profileSubview.hidden = false;
     profileSubview.setAttribute('aria-hidden', 'false');
@@ -2363,6 +2582,8 @@
       state.keyFormCustom = '';
       state.keyError = '';
       renderProfile();
+    } else if (target.id === 'deckInvite') {
+      state.deckInvite = target.value;
     } else if (target.id === 'avatarUpload') {
       var file = target.files && target.files[0];
       if (file) handleAvatarFile(file);
@@ -2494,6 +2715,27 @@
     }
     if (action === 'cancel-edit-key') {
       cancelEditKey();
+      return;
+    }
+    if (action === 'open-deck-style') {
+      openDeckStyle(element ? element.getAttribute('data-deck-style') : '');
+      return;
+    }
+    if (action === 'close-deck-detail') {
+      closeDeckDetail();
+      return;
+    }
+    if (action === 'toggle-deck-all') {
+      state.deckShowAll = !state.deckShowAll;
+      renderProfile();
+      return;
+    }
+    if (action === 'select-deck') {
+      selectDeck(element ? element.getAttribute('data-deck-style') : '');
+      return;
+    }
+    if (action === 'unlock-deck') {
+      unlockDeck();
       return;
     }
     if (action === 'toggle-avatar-picker') {
@@ -2808,6 +3050,7 @@
 
     initManifest();
     validateData();
+    readDeckPreferences();
     renderSpreadFilters();
     renderSpreadList();
     applySpreadFilter('all');
