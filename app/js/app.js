@@ -1867,7 +1867,7 @@
         '</button></div></div>' : '') +
       '<p class="auth-status' + (state.authError ? ' is-error' : '') + '" aria-live="polite">' + escapeHTML(message) + '</p>' +
       '<p class="auth-note">当前支持 @qq.com、@foxmail.com、@vip.qq.com。登录即完成 QQ 邮箱绑定；首次登录会自动注册。</p>' +
-      '<button class="text-btn auth-service" type="button" data-action="open-api-settings">服务地址设置</button>' +
+      '<button class="text-btn auth-service" type="button" data-action="open-api-settings" data-service-address>服务地址设置</button>' +
     '</div>';
   }
 
@@ -2030,6 +2030,15 @@
       (state.keyError && !state.keyFormOpen ? '<p class="profile-error">' + escapeHTML(state.keyError) + '</p>' : '');
   }
 
+  function updateServiceAddressVisibility() {
+    var configured = window.ARCANA_CONFIG && window.ARCANA_CONFIG.apiBaseUrl;
+    var hide = Boolean(configured);
+    var nodes = document.querySelectorAll('[data-service-address]');
+    for (var i = 0; i < nodes.length; i += 1) {
+      nodes[i].hidden = hide;
+    }
+  }
+
   function renderProfile() {
     if (!profileContent) return;
     if (state.authLoading) {
@@ -2042,6 +2051,7 @@
       renderMenuRow('api') +
       renderMenuRow('deck');
     if (state.profileView !== 'main') renderProfileSubview();
+    updateServiceAddressVisibility();
     updateProfileButton();
     updateCooldownButtons();
   }
