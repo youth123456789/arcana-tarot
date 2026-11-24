@@ -12,12 +12,14 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: MAIL_MODE
-        value: mailjet
-      - key: MAILJET_API_KEY
+        value: emailjs
+      - key: EMAILJS_SERVICE_ID
         sync: false
-      - key: MAILJET_API_SECRET
+      - key: EMAILJS_TEMPLATE_ID
         sync: false
-      - key: MAIL_FROM
+      - key: EMAILJS_PUBLIC_KEY
+        sync: false
+      - key: EMAILJS_PRIVATE_KEY
         sync: false
       - key: CORS_ORIGINS
         value: https://localhost,capacitor://localhost

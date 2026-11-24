@@ -177,6 +177,47 @@ function createMailjetMailer(config) {
   };
 }
 
+function createEmailJsMailer(config) {
+  const serviceId = config.mail.emailjsServiceId;
+  const templateId = config.mail.emailjsTemplateId;
+  const publicKey = config.mail.emailjsPublicKey;
+  const privateKey = config.mail.emailjsPrivateKey;
+  return {
+    mode: 'emailjs',
+    async sendCode(email, code) {
+      const content = codeEmail(code);
+      let response;
+      try {
+        response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            service_id: serviceId,
+            template_id: templateId,
+            user_id: publicKey,
+            accessToken: privateKey,
+            template_params: {
+              to_email: email,
+              code,
+              subject: content.subject,
+              message: content.text,
+              app_name: 'ARCANA'
+            }
+          }),
+          signal: AbortSignal.timeout(12000)
+        });
+      } catch (error) {
+        throw new Error(`EmailJS request failed: ${error.message}`);
+      }
+      const body = await response.text().catch(() => '');
+      if (!response.ok) {
+        throw new Error(`EmailJS HTTP ${response.status}: ${body.slice(0, 200)}`);
+      }
+      return { mode: 'emailjs' };
+    }
+  };
+}
+
 function createMailer(config) {
   if (config.mail.mode === 'console') {
     return {
@@ -202,6 +243,10 @@ function createMailer(config) {
 
   if (config.mail.mode === 'mailjet') {
     return createMailjetMailer(config);
+  }
+
+  if (config.mail.mode === 'emailjs') {
+    return createEmailJsMailer(config);
   }
 
   const transport = nodemailer.createTransport({

@@ -8,16 +8,16 @@
 Android APK
    ↓ HTTPS
 Render Free Web Service
-   ├── Supabase Free Postgres：账号、Session、加密 API Key
-   └── Mailjet Free HTTPS API：QQ 邮箱验证码
+   ├── Neon Free Postgres：账号、Session、加密 API Key
+   └── EmailJS Free HTTPS API：QQ 邮箱验证码
 ```
 
 所需账号：
 
 - GitHub（仓库已有）
 - Render
-- Supabase
-- Mailjet
+- Neon
+- EmailJS
 
 三个平台都有免费层。免费层有休眠/暂停/额度限制，但数据能持久保存。
 
@@ -34,8 +34,8 @@ Render 免费 Web Service 有两个硬限制：
 
 所以免费方案必须：
 
-- 用 Supabase Postgres 代替 SQLite；
-- 用 Mailjet HTTPS API 代替 QQ SMTP。
+- 用 Neon Postgres 代替 SQLite；
+- 用 EmailJS HTTPS API 代替 QQ SMTP。
 
 代码已经支持这两种模式。
 
@@ -46,7 +46,7 @@ Render 免费 Web Service 有两个硬限制：
 Render 构建的是 GitHub 上的代码，不是本机文件。先确认仓库已经包含最新的：
 
 - `server/db.js`（Postgres 支持）
-- `server/mail.js`（Mailjet 支持）
+- `server/mail.js`（EmailJS 支持）
 - `render.yaml`（`plan: free`，无磁盘）
 
 在项目根目录执行：
@@ -60,64 +60,70 @@ git push origin main
 
 如果仓库还是旧版，Render 会按旧版启动，免费方案会失败。
 
-## 第 1 步：创建 Supabase 数据库
+## 第 1 步：创建 Neon 数据库
 
-1. 打开 <https://supabase.com/>，用 GitHub 登录；
-2. **New project**；
-3. 名称随意，例如 `arcana`；
-4. 区域选 **Southeast Asia (Singapore)** 或日本；
-5. 设置数据库密码并保存好；
-6. 等待项目初始化完成。
+1. 打开 <https://neon.tech/>，用 GitHub 登录；
+2. New Project；
+3. 区域选 Singapore；
+4. 创建完成后进入 Dashboard；
+5. 打开 Connect 或 Connection string；
+6. 确认 Connection pooling 已开启；
+7. 复制连接串，点 Show password 获取真实密码。
 
-### 获取连接串
-
-进入项目：
-
-```text
-Connect → Session Pooler
-```
-
-复制 **Session Pooler** 的连接串，不要用 Direct Connection。Render 的网络环境更适合 Pooler，而且 Direct Connection 可能只有 IPv6。
-
-连接串类似：
+连接串形如：
 
 ```text
-postgresql://postgres.xxxx:你的密码@aws-0-region.pooler.supabase.com:5432/postgres
+postgresql://neondb_owner:真实密码@ep-xxxx-pooler.c-5.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
 ```
 
-如果密码包含 `@`、`#`、`/` 等字符，要在连接串里做 URL 编码，或改用只含字母数字的密码。
+注意：
 
-> 第一次启动后端时会自动建表，不需要手动执行 SQL。
+- 把星号换成真实密码；
+- 删除 `&channel_binding=require`，Node 的 pg 驱动不需要；
+- 首次启动后端会自动建表。
 
-免费项目连续 7 天无活动会暂停。暂停后打开 Supabase Dashboard 点 **Restore**，再访问 App 即可。
+Neon 免费项目会自动挂起，第一次请求需要唤醒。
 
----
+## 第 2 步：创建 EmailJS 邮件账号
 
-## 第 2 步：创建 Mailjet 邮件账号
+Mailjet 账号被风控关闭，Brevo、SMTP2GO、SendGrid 也都不适合只有 QQ 邮箱的情况。  
+EmailJS 免费计划不需要域名或手机验证，可以通过 SMTP 连接你的 QQ 邮箱发送验证码。
 
-Brevo 和 SMTP2GO 不允许公共免费邮箱注册；SendGrid 注册时要求手机短信验证，中国大陆号码经常收不到验证码。  
-Mailjet 的免费计划不需要手机验证，支持 Single Sender，可以用 QQ 邮箱作为发件地址。
+1. 打开 <https://www.emailjs.com/>，免费注册；
+2. 进入 Email Services → Add New Service；
+3. 选择 SMTP（不是 Gmail）；
+4. 填写 QQ 邮箱 SMTP：
+   - Host: `smtp.qq.com`
+   - Port: `465`
+   - SSL: 开启
+   - Username: 你的QQ邮箱@qq.com
+   - Password: QQ 邮箱 SMTP 授权码
+   - From: 你的QQ邮箱@qq.com
+5. 保存后记下 Service ID；
+6. 进入 Email Templates → Create New Template；
+7. To Email 填 `{{to_email}}`，Subject 填 `ARCANA 登录验证码`，正文里放 `{{code}}`；
+8. 保存后记下 Template ID；
+9. 进入 Account → General，复制 Public Key；
+10. 进入 Account → Security，启用 Private Key 并复制。
 
-1. 打开 <https://www.mailjet.com/>，免费注册；
-2. 完成邮箱验证；
-3. 进入 Account Settings → Sender domains & addresses；
-4. 添加你的 QQ 邮箱作为单发件地址；
-5. 去 QQ 邮箱收验证邮件并完成验证；
-6. 进入 Account Settings → API Key Management；
-7. 获取 API Key 和 Secret Key。
-
-免费额度约 6000 封/月、200 封/天。
+免费额度约 200 封/月。
 
 关键配置：
 
 ```dotenv
-MAIL_MODE=mailjet
-MAILJET_API_KEY=你的 API Key
-MAILJET_API_SECRET=你的 Secret Key
-MAIL_FROM=你的QQ邮箱@qq.com
+MAIL_MODE=emailjs
+EMAILJS_SERVICE_ID=Service ID
+EMAILJS_TEMPLATE_ID=Template ID
+EMAILJS_PUBLIC_KEY=Public Key
+EMAILJS_PRIVATE_KEY=Private Key
 ```
 
-`MAIL_FROM` 必须和 Mailjet 里验证过的发件地址完全一致。
+模板里的变量名必须是：
+
+```text
+{{to_email}}
+{{code}}
+```
 
 ## 第 3 步：Render 创建免费服务
 
@@ -145,10 +151,11 @@ Disk: 无
 8. 填写环境变量：
 
 ```text
-DATABASE_URL=第 1 步的 Supabase Session Pooler 连接串
-MAILJET_API_KEY=第 2 步的 Mailjet API Key
-MAILJET_API_SECRET=第 2 步的 Mailjet Secret Key
-MAIL_FROM=你的QQ邮箱@qq.com
+DATABASE_URL=第 1 步的 Neon 连接串
+EMAILJS_SERVICE_ID=第 2 步的 Service ID
+EMAILJS_TEMPLATE_ID=第 2 步的 Template ID
+EMAILJS_PUBLIC_KEY=第 2 步的 Public Key
+EMAILJS_PRIVATE_KEY=第 2 步的 Private Key
 ```
 
 `APP_SECRET` 会自动生成，不要手动改。改了以后已经保存的 API Key 会解不开。
@@ -183,7 +190,7 @@ https://arcana-xxxx.onrender.com/api/health
 {
   "ok": true,
   "service": "arcana",
-  "mail": { "mode": "mailjet" },
+  "mail": { "mode": "emailjs" },
   "storage": "postgres"
 }
 ```
@@ -219,16 +226,19 @@ npm run android:debug
 
 检查：
 
-- Mailjet 的 sender 是否已验证；
-- `MAIL_FROM` 是否和已验证 sender 完全一致；
-- `MAILJET_API_KEY` 是否正确；
-- Mailjet 免费额度是否用完；
-- Render 日志里是否出现 `Mailjet HTTP 401/403`。
+- EmailJS 的 SMTP 服务是否连接成功；
+- QQ 邮箱 SMTP 授权码是否正确；
+- 模板里是否有 `{{to_email}}` 和 `{{code}}`；
+- `EMAILJS_SERVICE_ID` 和 `EMAILJS_TEMPLATE_ID` 是否正确；
+- `EMAILJS_PUBLIC_KEY` 和 `EMAILJS_PRIVATE_KEY` 是否正确；
+- EmailJS 免费额度是否用完；
+- Render 日志里是否出现 `EmailJS HTTP 400/401/403`。
 
 ### Render 日志报数据库连接失败
 
-- 确认用的是 **Session Pooler**，不是 Direct Connection；
-- 确认 Supabase 项目没有暂停；
+- 确认连接串里是真实密码；
+- 删除连接串末尾的 `&channel_binding=require`；
+- 确认 Neon 项目没有暂停；
 - 密码里的特殊字符是否做了 URL 编码；
 - 连接串是否包含 `postgresql://`。
 
@@ -236,21 +246,21 @@ npm run android:debug
 
 免费实例会休眠，第一次请求需要唤醒。可以接受就继续用；不能接受再升级 Render Starter（约 $7/月），代码不需要改。
 
-### Supabase 免费项目暂停
+### Neon 免费项目挂起
 
-登录 Supabase Dashboard，恢复项目，然后重新访问 Render 地址。
+打开 Neon Dashboard 唤醒项目，然后重新访问 Render 地址。
 
 ### Render 免费实例能挂磁盘吗
 
-不能。当前方案已经用 Supabase 代替磁盘，不需要磁盘。
+不能。当前方案已经用 Neon 代替磁盘，不需要磁盘。
 
 ---
 
 ## 免费方案的限制
 
 - Render 免费：休眠、冷启动、512 MB 内存；
-- Supabase 免费：500 MB 数据库，7 天不活动暂停；
-- Mailjet 免费：约 200 封/天；
+- Neon 免费：约 0.5 GB 数据库，闲置后会自动挂起；
+- EmailJS 免费：约 200 封/月；
 - 限流在单实例内存里，适合小范围朋友；
 - 不适合大量公开用户或商业运营。
 
@@ -262,8 +272,8 @@ npm run android:debug
 
 - Render 升到 Starter；
 - Render 加 1 GB 持久磁盘；
-- 数据库可以继续用 Supabase，也可以切回 SQLite；
-- QQ SMTP 可用，但当前 Mailjet 也可以继续用。
+- 数据库可以继续用 Neon，也可以切回 SQLite；
+- QQ SMTP 可用，但当前 EmailJS 也可以继续用。
 
 代码不需要改，只改环境变量和 Render 套餐。
 

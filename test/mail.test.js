@@ -215,3 +215,59 @@ test('Mailjet mailer reports rejected sends', async () => {
     global.fetch = originalFetch;
   }
 });
+
+
+test('EmailJS mailer sends code through HTTPS API', async () => {
+  const originalFetch = global.fetch;
+  let captured = null;
+  global.fetch = async (url, options) => {
+    captured = { url, options };
+    return new Response('OK', { status: 200 });
+  };
+  try {
+    const mailer = createMailer({
+      mail: {
+        mode: 'emailjs',
+        emailjsServiceId: 'service_arcana',
+        emailjsTemplateId: 'template_code',
+        emailjsPublicKey: 'public-key',
+        emailjsPrivateKey: 'private-key',
+        from: 'sender@qq.com',
+        fromName: 'ARCANA'
+      }
+    });
+    const result = await mailer.sendCode('friend@qq.com', '778899');
+    assert.equal(result.mode, 'emailjs');
+    assert.equal(captured.url, 'https://api.emailjs.com/api/v1.0/email/send');
+    const body = JSON.parse(captured.options.body);
+    assert.equal(body.service_id, 'service_arcana');
+    assert.equal(body.template_id, 'template_code');
+    assert.equal(body.user_id, 'public-key');
+    assert.equal(body.accessToken, 'private-key');
+    assert.equal(body.template_params.to_email, 'friend@qq.com');
+    assert.equal(body.template_params.code, '778899');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('EmailJS mailer reports HTTP errors', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async () => new Response('invalid service', { status: 400 });
+  try {
+    const mailer = createMailer({
+      mail: {
+        mode: 'emailjs',
+        emailjsServiceId: 'service_arcana',
+        emailjsTemplateId: 'template_code',
+        emailjsPublicKey: 'public-key',
+        emailjsPrivateKey: 'private-key',
+        from: 'sender@qq.com',
+        fromName: 'ARCANA'
+      }
+    });
+    await assert.rejects(() => mailer.sendCode('friend@qq.com', '778899'), /EmailJS HTTP 400/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

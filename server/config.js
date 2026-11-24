@@ -29,8 +29,8 @@ function loadConfig() {
   }
 
   const mailMode = String(process.env.MAIL_MODE || 'console').toLowerCase();
-  if (!['console', 'smtp', 'brevo', 'smtp2go', 'sendgrid', 'mailjet'].includes(mailMode)) {
-    throw new Error('MAIL_MODE must be console, smtp, brevo, smtp2go, sendgrid or mailjet');
+  if (!['console', 'smtp', 'brevo', 'smtp2go', 'sendgrid', 'mailjet', 'emailjs'].includes(mailMode)) {
+    throw new Error('MAIL_MODE must be console, smtp, brevo, smtp2go, sendgrid, mailjet or emailjs');
   }
 
   const smtpUser = String(process.env.SMTP_USER || '').trim();
@@ -40,6 +40,10 @@ function loadConfig() {
   const sendgridApiKey = String(process.env.SENDGRID_API_KEY || '').trim();
   const mailjetApiKey = String(process.env.MAILJET_API_KEY || '').trim();
   const mailjetApiSecret = String(process.env.MAILJET_API_SECRET || '').trim();
+  const emailjsServiceId = String(process.env.EMAILJS_SERVICE_ID || '').trim();
+  const emailjsTemplateId = String(process.env.EMAILJS_TEMPLATE_ID || '').trim();
+  const emailjsPublicKey = String(process.env.EMAILJS_PUBLIC_KEY || '').trim();
+  const emailjsPrivateKey = String(process.env.EMAILJS_PRIVATE_KEY || '').trim();
   const mailFrom = String(process.env.MAIL_FROM || smtpUser).trim();
   if (mailMode === 'smtp' && (!smtpUser || !smtpPass)) {
     throw new Error('SMTP_USER and SMTP_PASS are required when MAIL_MODE=smtp');
@@ -55,6 +59,9 @@ function loadConfig() {
   }
   if (mailMode === 'mailjet' && (!mailjetApiKey || !mailjetApiSecret || !mailFrom)) {
     throw new Error('MAILJET_API_KEY, MAILJET_API_SECRET and MAIL_FROM are required when MAIL_MODE=mailjet');
+  }
+  if (mailMode === 'emailjs' && (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey || !emailjsPrivateKey)) {
+    throw new Error('EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY and EMAILJS_PRIVATE_KEY are required when MAIL_MODE=emailjs');
   }
 
   let providerOverrides = {};
@@ -95,6 +102,10 @@ function loadConfig() {
       sendgridApiKey,
       mailjetApiKey,
       mailjetApiSecret,
+      emailjsServiceId,
+      emailjsTemplateId,
+      emailjsPublicKey,
+      emailjsPrivateKey,
       from: mailFrom,
       fromName: process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || 'ARCANA'
     },
