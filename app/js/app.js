@@ -124,6 +124,8 @@
     deckPurchaseOpen: false,
     avatarCache: null,
     spreadImageBusy: false,
+    spreadImageBlob: null,
+    spreadImageName: 'arcana-spread.png',
     avatarPickerOpen: false,
     avatarBusy: false,
     thinkingStartedAt: 0,
@@ -1161,7 +1163,7 @@
       return;
     }
 
-    openSpreadPreview();
+    beginReading();
   }
 
   function openSpreadPreview() {
@@ -1356,6 +1358,48 @@
     ctx.restore();
   }
 
+  function closeSpreadExport() {
+    var modal = document.getElementById('spreadExport');
+    if (modal) modal.hidden = true;
+    var preview = document.getElementById('spreadExportPreview');
+    if (preview && preview.src && preview.src.indexOf('blob:') === 0) {
+      try { URL.revokeObjectURL(preview.src); } catch (error) { /* ignore */ }
+    }
+    state.spreadImageBlob = null;
+    if (preview) preview.removeAttribute('src');
+  }
+
+  function triggerSpreadDownload() {
+    var blob = state.spreadImageBlob;
+    if (!blob) {
+      showToast('牌阵图片还没有生成完成。');
+      return;
+    }
+    var fileName = state.spreadImageName || 'arcana-spread.png';
+    var file = null;
+    try { file = new File([blob], fileName, { type: 'image/png' }); } catch (error) { file = null; }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'ARCANA 牌阵' }).catch(function () {
+        fallbackDownload();
+      });
+      return;
+    }
+    fallbackDownload();
+
+    function fallbackDownload() {
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+      showToast('图片已生成，若没有保存，请长按图片保存');
+    }
+  }
+
   async function saveSpreadImage() {
     var spread = state.spread;
     if (!spread || state.spreadImageBusy) return;
@@ -1478,18 +1522,15 @@
       ctx.fillText('ARCANA  ·  ' + style.name + '  ·  ' + new Date().toLocaleDateString('zh-CN'), side, height - 44);
       ctx.globalAlpha = 1;
 
-      var dataUrl = canvas.toDataURL('image/png');
+      var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+      var dataUrl = blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png');
+      state.spreadImageBlob = blob || null;
+      state.spreadImageName = 'arcana-' + spread.id + '-' + style.id + '.png';
       var preview = document.getElementById('spreadExportPreview');
       if (preview) preview.src = dataUrl;
       var modal = document.getElementById('spreadExport');
       if (modal) modal.hidden = false;
-      var link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = 'arcana-' + spread.id + '-' + style.id + '.png';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showToast('高清牌阵已生成');
+      showToast('高清牌阵已生成，可保存或长按图片');
     } catch (error) {
       showToast(error.message || '牌阵图片生成失败。');
     } finally {
@@ -3303,8 +3344,11 @@
       return;
     }
     if (action === 'close-spread-export') {
-      var exportModal = document.getElementById('spreadExport');
-      if (exportModal) exportModal.hidden = true;
+      closeSpreadExport();
+      return;
+    }
+    if (action === 'download-spread-image') {
+      triggerSpreadDownload();
       return;
     }
     if (action === 'back-to-input') {

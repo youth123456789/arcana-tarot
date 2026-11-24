@@ -5382,6 +5382,12 @@ h1, h2, h3 {
 }
 .spread-preview__hint { margin-top: 16px; color: var(--faint); font-size: 9px; line-height: 1.7; text-align: center; }
 .spread-preview__save { margin-right: 8px; }
+.spread-export__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+}
 .spread-export {
   position: fixed;
   inset: 0;
@@ -5394,6 +5400,8 @@ h1, h2, h3 {
 }
 .spread-export[hidden] { display: none; }
 .spread-export__card {
+  position: relative;
+  z-index: 1;
   width: min(100%, 430px);
   max-height: 90dvh;
   overflow: auto;
@@ -5405,7 +5413,8 @@ h1, h2, h3 {
 .spread-export__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .spread-export__head strong { color: var(--gold-soft); font-family: var(--serif); font-size: 18px; font-weight: 400; }
 .spread-export__head button { color: var(--faint); }
-.spread-export__preview { display: block; width: 100%; height: auto; border-radius: 10px; }
+.spread-export__preview { display: block; width: 100%; height: auto; border-radius: 10px; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; }
+.spread-export__save { width: 100%; margin-top: 10px; }
 .spread-export__card p { margin-top: 10px; color: var(--faint); font-size: 9px; line-height: 1.6; }
 
 /* ===== Deck material language ===== */
