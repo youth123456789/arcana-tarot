@@ -119,6 +119,9 @@
     deckShowAll: false,
     deckInvite: '',
     deckInviteError: '',
+    deckPayment: { amount: 9.9, qrUrl: '' },
+    deckBusy: false,
+    spreadImageBusy: false,
     avatarPickerOpen: false,
     avatarBusy: false,
     thinkingStartedAt: 0,
@@ -220,6 +223,37 @@
     } catch (error) { /* ignore */ }
     state.unlockedDecks = unlocked;
     state.deckStyle = (deckStyleById(styleId) && unlocked.indexOf(styleId) > -1) ? styleId : 'rider';
+  }
+
+  function applyDeckState(payload) {
+    if (!payload || !Array.isArray(payload.decks)) return;
+    var unlocked = ['rider'];
+    payload.decks.forEach(function (item) {
+      if (item && item.unlocked && deckStyleById(item.id) && unlocked.indexOf(item.id) === -1) unlocked.push(item.id);
+    });
+    state.unlockedDecks = unlocked;
+    var selected = payload.selected;
+    if (!deckStyleById(selected) || unlocked.indexOf(selected) === -1) selected = 'rider';
+    state.deckStyle = selected;
+    if (state.authUser) state.authUser.deckStyle = selected;
+    if (payload.payment) {
+      state.deckPayment = {
+        amount: Number(payload.payment.amount) || 9.9,
+        qrUrl: payload.payment.qrUrl || ''
+      };
+    }
+    saveDeckPreferences();
+  }
+
+  async function loadDecks() {
+    if (!window.ArcanaAPI || !ArcanaAPI.getToken()) return;
+    try {
+      var payload = await ArcanaAPI.getDecks();
+      applyDeckState(payload);
+      if (state.profileOpen) renderProfile();
+    } catch (error) {
+      if (error.status !== 401) console.warn('[decks]', error.message);
+    }
   }
 
   function saveDeckPreferences() {
@@ -1123,7 +1157,222 @@
       return;
     }
 
-    beginReading();
+    openSpreadPreview();
+  }
+
+  function openSpreadPreview() {
+    renderSpreadPreview();
+    setScreen('spread-preview');
+  }
+
+  function renderSpreadPreview() {
+    var spread = state.spread;
+    if (!spread) return;
+    var style = activeDeckStyle();
+    var aside = document.getElementById('spreadPreviewAside');
+    if (aside) aside.textContent = style.name;
+    var board = renderBoard(spread, { all: true, reading: true, label: 'YOUR SPREAD' });
+    var legend = spread.positions.map(function (position, index) {
+      var selection = state.selections[position.id];
+      var card = selection ? DATA.getCard(selection.cardId) : null;
+      if (!card) return '';
+      return '<div class="spread-legend__row"><span>' + pad2(index + 1) + '</span><div><strong>' + escapeHTML(position.name) + '</strong><small>' + escapeHTML(card.name) + ' · ' + (selection.reversed ? '逆位' : '正位') + '</small></div></div>';
+    }).join('');
+    var host = document.getElementById('spreadPreviewContent');
+    if (!host) return;
+    host.innerHTML = '<div class="spread-preview">' +
+      '<p class="eyebrow"><span class="eyebrow__line"></span>THE WHOLE PICTURE</p>' +
+      '<h1>' + escapeHTML(spread.name) + '</h1>' +
+      '<p class="spread-preview__question">「' + escapeHTML(state.question.trim() || spread.demoQuestion || '') + '」</p>' +
+      '<div class="spread-preview__stage">' + board + '</div>' +
+      '<div class="spread-legend">' + legend + '</div>' +
+      '<p class="spread-preview__hint">这是你此刻的完整牌阵。确认后开始解读，或保存成高清图片。</p>' +
+    '</div>';
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth) {
+    var chars = Array.from(String(text || ''));
+    var lines = [];
+    var line = '';
+    chars.forEach(function (char) {
+      var trial = line + char;
+      if (ctx.measureText(trial).width > maxWidth && line) {
+        lines.push(line);
+        line = char;
+      } else {
+        line = trial;
+      }
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function spreadImagePalette(id) {
+    var palettes = {
+      rider: { bg: '#1b140e', panel: '#2a2017', accent: '#e0c08d', ink: '#f6ead2' },
+      rose: { bg: '#180d16', panel: '#2a1423', accent: '#ffc2dc', ink: '#ffeaf2' },
+      malachite: { bg: '#071d17', panel: '#0d3025', accent: '#b9e6c8', ink: '#e3f7e8' },
+      eclipse: { bg: '#080a10', panel: '#151a26', accent: '#d9deef', ink: '#f0f2fa' },
+      gilded: { bg: '#100d08', panel: '#211b11', accent: '#e9c981', ink: '#f7e8c8' },
+      abyss: { bg: '#04151f', panel: '#082735', accent: '#a9ecec', ink: '#e1fbf9' },
+      terracotta: { bg: '#27130e', panel: '#402219', accent: '#f0c391', ink: '#fae4c7' },
+      aurora: { bg: '#110d25', panel: '#1d1838', accent: '#e4d0ff', ink: '#f5edff' }
+    };
+    return palettes[id] || palettes.rider;
+  }
+
+  function spreadImageFilter(id) {
+    var filters = {
+      rider: 'saturate(.88) contrast(1.02)',
+      rose: 'grayscale(.65) sepia(.22) hue-rotate(285deg) saturate(1.45) brightness(.88) contrast(1.08)',
+      malachite: 'grayscale(1) sepia(1) hue-rotate(80deg) saturate(1.7) brightness(.78) contrast(1.08)',
+      eclipse: 'grayscale(1) contrast(1.18) brightness(.82)',
+      gilded: 'sepia(.78) saturate(1.35) brightness(.82) contrast(1.08)',
+      abyss: 'grayscale(1) sepia(1) hue-rotate(155deg) saturate(1.9) brightness(.68) contrast(1.1)',
+      terracotta: 'sepia(.72) saturate(1.45) hue-rotate(-16deg) brightness(.94) contrast(1.02)',
+      aurora: 'grayscale(.55) hue-rotate(225deg) saturate(1.55) brightness(.82) contrast(1.08)'
+    };
+    return filters[id] || filters.rider;
+  }
+
+  async function saveSpreadImage() {
+    var spread = state.spread;
+    if (!spread || state.spreadImageBusy) return;
+    var style = activeDeckStyle();
+    var palette = spreadImagePalette(style.id);
+    state.spreadImageBusy = true;
+    showToast('正在生成高清牌阵…');
+
+    try {
+      var cards = spread.positions.map(function (position) {
+        var selection = state.selections[position.id];
+        var card = selection ? DATA.getCard(selection.cardId) : null;
+        return { position: position, card: card, reversed: selection ? !!selection.reversed : false };
+      }).filter(function (item) { return item.card; });
+      if (!cards.length) throw new Error('牌阵还没有牌面。');
+
+      await Promise.all(cards.map(function (item) {
+        return new Promise(function (resolve) {
+          var image = new Image();
+          image.onload = function () { item.image = image; resolve(); };
+          image.onerror = function () { resolve(); };
+          image.src = cardImageUrl(item.card);
+        });
+      }));
+
+      var width = 1600;
+      var columns = cards.length <= 1 ? 1 : cards.length === 2 ? 2 : 3;
+      var cardW = columns === 3 ? 300 : 360;
+      var cardH = Math.round(cardW * 518 / 300);
+      var gap = 52;
+      var side = Math.round((width - columns * cardW - (columns - 1) * gap) / 2);
+      var headerH = 330;
+      var labelH = 84;
+      var rowGap = 44;
+      var rows = Math.ceil(cards.length / columns);
+      var footerH = 100;
+      var height = headerH + rows * (cardH + labelH) + (rows - 1) * rowGap + footerH;
+      var canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      var bg = ctx.createLinearGradient(0, 0, width, height);
+      bg.addColorStop(0, palette.bg);
+      bg.addColorStop(1, '#07040c');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = palette.accent;
+      ctx.globalAlpha = .22;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(34, 34, width - 68, height - 68);
+      ctx.globalAlpha = .08;
+      for (var y = 60; y < height; y += 10) {
+        ctx.beginPath();
+        ctx.moveTo(34, y);
+        ctx.lineTo(width - 34, y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = palette.accent;
+      ctx.font = '500 22px Georgia, serif';
+      ctx.fillText('ARCANA  ·  SPREAD RECORD', side, 96);
+      ctx.fillStyle = palette.ink;
+      ctx.font = '400 64px "Noto Serif SC", Georgia, serif';
+      ctx.fillText(spread.name, side, 180);
+      ctx.fillStyle = palette.accent;
+      ctx.font = '400 24px "Noto Serif SC", Georgia, serif';
+      ctx.fillText(style.name + '  /  ' + style.en, side, 220);
+      ctx.fillStyle = palette.ink;
+      ctx.globalAlpha = .78;
+      ctx.font = '400 24px "Noto Serif SC", Georgia, serif';
+      var questionLines = wrapCanvasText(ctx, '「' + (state.question.trim() || '') + '」', width - side * 2).slice(0, 2);
+      questionLines.forEach(function (line, index) { ctx.fillText(line, side, 270 + index * 34); });
+      ctx.globalAlpha = 1;
+
+      cards.forEach(function (item, index) {
+        var col = index % columns;
+        var row = Math.floor(index / columns);
+        var x = side + col * (cardW + gap);
+        var y = headerH + row * (cardH + labelH + rowGap);
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,.55)';
+        ctx.shadowBlur = 26;
+        ctx.shadowOffsetY = 12;
+        ctx.fillStyle = palette.panel;
+        ctx.fillRect(x - 6, y - 6, cardW + 12, cardH + 12);
+        ctx.restore();
+        if (item.image) {
+          ctx.save();
+          if ('filter' in ctx) ctx.filter = spreadImageFilter(style.id);
+          ctx.drawImage(item.image, x, y, cardW, cardH);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = palette.panel;
+          ctx.fillRect(x, y, cardW, cardH);
+          ctx.fillStyle = palette.accent;
+          ctx.font = '400 28px "Noto Serif SC", serif';
+          ctx.fillText(item.card.name, x + 22, y + 60);
+        }
+        ctx.strokeStyle = palette.accent;
+        ctx.globalAlpha = .45;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, cardW, cardH);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = palette.accent;
+        ctx.font = '500 18px Georgia, serif';
+        ctx.fillText(pad2(index + 1) + '  ·  ' + item.position.name, x, y + cardH + 32);
+        ctx.fillStyle = palette.ink;
+        ctx.font = '400 22px "Noto Serif SC", Georgia, serif';
+        ctx.fillText(item.card.name + '  ·  ' + (item.reversed ? '逆位' : '正位'), x, y + cardH + 62);
+      });
+
+      ctx.fillStyle = palette.accent;
+      ctx.globalAlpha = .65;
+      ctx.font = '400 18px Georgia, serif';
+      ctx.fillText('ARCANA  ·  ' + style.name + '  ·  ' + new Date().toLocaleDateString('zh-CN'), side, height - 44);
+      ctx.globalAlpha = 1;
+
+      var dataUrl = canvas.toDataURL('image/png');
+      var preview = document.getElementById('spreadExportPreview');
+      if (preview) preview.src = dataUrl;
+      var modal = document.getElementById('spreadExport');
+      if (modal) modal.hidden = false;
+      var link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'arcana-' + spread.id + '-' + style.id + '.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showToast('高清牌阵已生成');
+    } catch (error) {
+      showToast(error.message || '牌阵图片生成失败。');
+    } finally {
+      state.spreadImageBusy = false;
+    }
   }
 
   /* =========================================================
@@ -2004,6 +2253,7 @@
       state.authUser = me.user;
       await loadProviders();
       await loadKeys();
+      await loadDecks();
     } catch (error) {
       if (error.status === 401) {
         ArcanaAPI.clearToken();
@@ -2148,14 +2398,19 @@
     }
     var action;
     if (!unlocked) {
+      var payment = state.deckPayment || {};
+      var amount = Number(payment.amount || style.price || 9.9).toFixed(1);
+      var qr = payment.qrUrl
+        ? '<img src="' + escapeHTML(payment.qrUrl) + '" alt="收款码">'
+        : '<span>收款码</span><small>作者尚未配置</small>';
       action = '<div class="deck-purchase">' +
-        '<div class="deck-purchase__qr"><span>收款码</span><small>后端接入后配置</small></div>' +
-        '<div class="deck-purchase__copy"><strong>¥9.9 解锁「' + escapeHTML(style.name) + '」</strong><p>扫码支付后向作者索取专属邀请码；输入邀请码即可在本机解锁。</p></div>' +
-        '<div class="deck-purchase__code"><input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入邀请码" value="' + escapeHTML(state.deckInvite) + '"><button class="text-btn" type="button" data-action="unlock-deck">验证</button></div>' +
+        '<div class="deck-purchase__qr">' + qr + '</div>' +
+        '<div class="deck-purchase__copy"><strong>¥' + amount + ' 解锁「' + escapeHTML(style.name) + '」</strong><p>扫码支付后向作者索取专属邀请码；输入邀请码即可解锁。</p></div>' +
+        '<div class="deck-purchase__code"><input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入邀请码" value="' + escapeHTML(state.deckInvite) + '"><button class="text-btn" type="button" data-action="unlock-deck"' + (state.deckBusy ? ' disabled' : '') + '>验证</button></div>' +
         (state.deckInviteError ? '<p class="profile-error">' + escapeHTML(state.deckInviteError) + '</p>' : '') +
       '</div>';
     } else {
-      action = '<button class="jelly-btn jelly-btn--compact deck-select-btn" type="button" data-action="select-deck" data-deck-style="' + style.id + '"' + (selected ? ' disabled' : '') + '>' +
+      action = '<button class="jelly-btn jelly-btn--compact deck-select-btn" type="button" data-action="select-deck" data-deck-style="' + style.id + '"' + (selected || state.deckBusy ? ' disabled' : '') + '>' +
         '<span class="jelly-btn__glow" aria-hidden="true"></span><span class="jelly-btn__text"><strong>' + (selected ? '正在使用' : '使用这套牌') + '</strong><small>' + (selected ? 'CURRENT DECK' : 'USE THIS DECK') + '</small></span>' +
       '</button>';
     }
@@ -2188,38 +2443,63 @@
     renderProfile();
   }
 
-  function selectDeck(id) {
+  async function selectDeck(id) {
     if (!deckStyleById(id) || !isDeckUnlocked(id)) return;
-    state.deckStyle = id;
-    state.deckDetail = null;
-    saveDeckPreferences();
+    if (!window.ArcanaAPI || !ArcanaAPI.getToken()) {
+      state.profileView = 'account';
+      renderProfile();
+      showToast('登录后才能保存牌面选择');
+      return;
+    }
+    state.deckBusy = true;
     renderProfile();
-    showToast('已切换为「' + deckStyleById(id).name + '」');
+    try {
+      var payload = await ArcanaAPI.selectDeck(id);
+      applyDeckState(payload);
+      state.deckDetail = null;
+      state.deckBusy = false;
+      renderProfile();
+      showToast('已切换为「' + deckStyleById(id).name + '」');
+    } catch (error) {
+      state.deckBusy = false;
+      renderProfile();
+      showToast(error.message || '牌面切换失败。');
+    }
   }
 
-  function unlockDeck() {
+  async function unlockDeck() {
     var style = deckStyleById(state.deckDetail);
     if (!style) return;
     var input = document.getElementById('deckInvite');
     if (input) state.deckInvite = input.value;
-    var code = String(state.deckInvite || '').trim().toUpperCase();
+    var code = String(state.deckInvite || '').trim();
     if (!code) {
       state.deckInviteError = '请输入邀请码。';
       renderProfile();
       return;
     }
-    if (code !== String(style.invite || '').toUpperCase()) {
-      state.deckInviteError = '邀请码不正确。';
+    if (!window.ArcanaAPI || !ArcanaAPI.getToken()) {
+      state.profileView = 'account';
       renderProfile();
+      showToast('登录后才能解锁牌面');
       return;
     }
-    if (state.unlockedDecks.indexOf(style.id) === -1) state.unlockedDecks.push(style.id);
-    state.deckStyle = style.id;
-    state.deckInvite = '';
+    state.deckBusy = true;
     state.deckInviteError = '';
-    saveDeckPreferences();
     renderProfile();
-    showToast('「' + style.name + '」已解锁并切换');
+    try {
+      var payload = await ArcanaAPI.unlockDeck(style.id, code);
+      applyDeckState(payload);
+      state.deckInvite = '';
+      state.deckInviteError = '';
+      state.deckBusy = false;
+      renderProfile();
+      showToast('「' + style.name + '」已解锁');
+    } catch (error) {
+      state.deckBusy = false;
+      state.deckInviteError = error.message || '邀请码验证失败。';
+      renderProfile();
+    }
   }
 
   function renderDeckContent() {
@@ -2462,6 +2742,7 @@
       state.profileView = 'account';
       await loadProviders();
       await loadKeys();
+      await loadDecks();
       renderProfile();
       showToast('已绑定 ' + result.user.email);
     } catch (error) {
@@ -2792,6 +3073,19 @@
     }
     if (action === 'retry-reading') {
       beginReading();
+      return;
+    }
+    if (action === 'begin-reading') {
+      beginReading();
+      return;
+    }
+    if (action === 'save-spread') {
+      saveSpreadImage();
+      return;
+    }
+    if (action === 'close-spread-export') {
+      var exportModal = document.getElementById('spreadExport');
+      if (exportModal) exportModal.hidden = true;
       return;
     }
     if (action === 'back-to-input') {

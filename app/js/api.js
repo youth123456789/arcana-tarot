@@ -111,6 +111,21 @@
     return data;
   }
 
+  async function getDecks() {
+    requireToken();
+    return request('/api/decks');
+  }
+
+  async function unlockDeck(id, code) {
+    requireToken();
+    return request('/api/decks/' + encodeURIComponent(id) + '/unlock', { method: 'POST', body: { code: code } });
+  }
+
+  async function selectDeck(id) {
+    requireToken();
+    return request('/api/decks/selected', { method: 'PUT', body: { deckId: id } });
+  }
+
   async function updateAvatar(avatar) {
     requireToken();
     return request('/api/auth/avatar', { method: 'PUT', body: { avatar: avatar } });
@@ -177,6 +192,9 @@
     verifyCode: verifyCode,
     me: me,
     updateAvatar: updateAvatar,
+    getDecks: getDecks,
+    unlockDeck: unlockDeck,
+    selectDeck: selectDeck,
     logout: logout,
     providers: providers,
     listKeys: listKeys,

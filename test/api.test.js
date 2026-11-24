@@ -96,6 +96,12 @@ function configFor(providerBaseUrl) {
     ai: { timeoutMs: 5000, testTimeoutMs: 3000, maxTokens: 500, temperature: 0.7, retries: 0 },
     rateLimit: { windowMs: 60000, max: 1000 },
     corsOrigins: ['https://localhost', 'http://localhost:4173'],
+    deck: {
+      price: 9.9,
+      paymentQrUrl: '',
+      inviteCodes: { rose: 'TEST-ROSE', malachite: 'TEST-GREEN' },
+      inviteMaxUses: 3
+    },
     providerOverrides: {
       deepseek: providerBaseUrl,
       anthropic: providerBaseUrl,
@@ -180,6 +186,23 @@ test('account, API keys and starred reading work end to end', async (t) => {
 
   const badAvatar = await request(app.baseUrl, 'PUT', '/api/auth/avatar', { avatar: 'javascript:alert(1)' }, token);
   assert.equal(badAvatar.response.status, 422);
+
+  const deckState = await request(app.baseUrl, 'GET', '/api/decks', undefined, token);
+  assert.equal(deckState.response.status, 200);
+  assert.equal(deckState.data.decks.find((deck) => deck.id === 'rider').unlocked, true);
+  assert.equal(deckState.data.selected, 'rider');
+
+  const lockedDeck = await request(app.baseUrl, 'POST', '/api/decks/rose/unlock', { code: 'NOPE' }, token);
+  assert.equal(lockedDeck.response.status, 422);
+
+  const unlockedDeck = await request(app.baseUrl, 'POST', '/api/decks/rose/unlock', { code: 'TEST-ROSE' }, token);
+  assert.equal(unlockedDeck.response.status, 200);
+  assert.equal(unlockedDeck.data.selected, 'rose');
+  assert.equal(unlockedDeck.data.decks.find((deck) => deck.id === 'rose').unlocked, true);
+
+  const selectedDeck = await request(app.baseUrl, 'PUT', '/api/decks/selected', { deckId: 'rider' }, token);
+  assert.equal(selectedDeck.response.status, 200);
+  assert.equal(selectedDeck.data.selected, 'rider');
 
   const providers = await request(app.baseUrl, 'GET', '/api/keys/providers');
   assert.equal(providers.response.status, 200);

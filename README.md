@@ -90,17 +90,17 @@ DeepSeek、OpenAI、Anthropic Claude、Google Gemini、阿里云百炼 Qwen、Mo
 当前提供 8 套牌面风格，默认使用韦特·经典。
 
 - 韦特·经典：免费
-- 铂金玫瑰·棱镜：¥9.9
-- 孔雀石·绿境：¥9.9
-- 月蚀银辉：¥9.9
-- 鎏金圣殿：¥9.9
-- 深海星图：¥9.9
-- 赤陶秘境：¥9.9
-- 极光棱镜：¥9.9
+- 铂金玫瑰·棱镜
+- 孔雀石·绿境
+- 月蚀银辉
+- 鎏金圣殿
+- 深海星图
+- 赤陶秘境
+- 极光棱镜
 
-每套风格使用韦特公版人物画，并配以不同的底色、边框、纹理和色彩处理，可预览全部 78 张牌并应用到实际抽牌界面。付费牌面支持收款码占位与邀请码解锁；当前为前端演示，正式支付和邀请码校验待后端接入。
+每套风格使用韦特公版人物画，并配以不同的底色、边框、纹理和色彩处理，可预览全部 78 张牌并应用到实际抽牌界面。部分风格需要通过邀请码解锁，邀请码校验由后端完成。
 
-完整名称、演示邀请码和接入计划见 [`docs/DECKS.md`](docs/DECKS.md)。
+完整名称与接入说明见 [`docs/DECKS.md`](docs/DECKS.md)。
 
 ---
 
@@ -123,7 +123,7 @@ Render 免费实例不能挂持久磁盘，并且封锁 SMTP 端口，所以不�
 - Render 免费实例闲置后休眠，首次请求可能等待 30–60 秒
 - Neon 免费项目会自动挂起，首次请求需要唤醒
 - EmailJS 免费额度约 200 封/月
-- 适合几个朋友使用，不适合大量公开用户
+- 适合小范围使用，不适合大量公开用户
 
 ---
 
@@ -185,7 +185,7 @@ http://localhost:4173
 - 在 API 配置中添加自己的 API Key
 - 点星标设为当前使用
 
-如果希望朋友安装后不用填地址，构建 APK 时写入：
+如果希望安装后不用填地址，构建 APK 时写入：
 
 ```powershell
 $env:ARCANA_API_BASE_URL="https://你的服务.onrender.com"
@@ -217,24 +217,10 @@ adb install -r dist/arcana-0.4.0-debug.apk
 SHA256：
 
 ```text
-303284F9AF17F4CDA1DA9A2BEAA653D34C8092A3630656CE986178B34A20FA2B
+5C94508121FF9908A177CF92CCDCA2F630414CB4475A8C2FC1B08C07290500BE
 ```
 
 如果安装过更早的测试包并提示签名冲突，先卸载旧版。
-
----
-
-## 给朋友使用
-
-只需要部署一次后端。
-
-- 朋友安装同一个 APK
-- 用自己的 QQ 邮箱登录
-- 各自添加自己的 API Key
-- 账号、Session、API Key 按 `user_id` 隔离
-- 邮件验证码由你的 EmailJS 账号发出
-
-朋友不需要自己部署后端。只有希望拥有完全独立数据库时，才需要各自部署。
 
 ---
 
@@ -308,5 +294,5 @@ npm test
 - [`docs/DEPLOY.md`](docs/DEPLOY.md)：免费部署完整步骤
 - [`docs/ANDROID.md`](docs/ANDROID.md)：APK 构建、安装、签名
 - [`docs/PROVIDERS.md`](docs/PROVIDERS.md)：服务商与模型
-- [`docs/DECKS.md`](docs/DECKS.md)：牌面风格、价格与前端邀请码
+- [`docs/DECKS.md`](docs/DECKS.md)：牌面风格与邀请码
 - [`PRIVACY.md`](PRIVACY.md)：隐私说明

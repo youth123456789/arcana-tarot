@@ -12,6 +12,7 @@ const SQLITE_SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
     avatar TEXT,
+    deck_style TEXT NOT NULL DEFAULT 'rider',
     created_at INTEGER NOT NULL,
     last_login_at INTEGER
   );
@@ -52,6 +53,24 @@ const SQLITE_SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys (user_id, created_at DESC);
   CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_one_star
     ON api_keys (user_id) WHERE starred = 1;
+
+  CREATE TABLE IF NOT EXISTS deck_entitlements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    deck_id TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'invite',
+    created_at INTEGER NOT NULL,
+    UNIQUE(user_id, deck_id)
+  );
+  CREATE TABLE IF NOT EXISTS deck_invite_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deck_id TEXT NOT NULL,
+    code_hash TEXT NOT NULL UNIQUE,
+    max_uses INTEGER NOT NULL DEFAULT 100,
+    used_count INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL
+  );
 `;
 
 const POSTGRES_SCHEMA = `
@@ -59,6 +78,7 @@ const POSTGRES_SCHEMA = `
     id BIGSERIAL PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     avatar TEXT,
+    deck_style TEXT NOT NULL DEFAULT 'rider',
     created_at BIGINT NOT NULL,
     last_login_at BIGINT
   );
@@ -100,7 +120,26 @@ const POSTGRES_SCHEMA = `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_one_star
     ON api_keys (user_id) WHERE starred = 1;
 
+  CREATE TABLE IF NOT EXISTS deck_entitlements (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    deck_id TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'invite',
+    created_at BIGINT NOT NULL,
+    UNIQUE(user_id, deck_id)
+  );
+  CREATE TABLE IF NOT EXISTS deck_invite_codes (
+    id BIGSERIAL PRIMARY KEY,
+    deck_id TEXT NOT NULL,
+    code_hash TEXT NOT NULL UNIQUE,
+    max_uses INTEGER NOT NULL DEFAULT 100,
+    used_count INTEGER NOT NULL DEFAULT 0,
+    active SMALLINT NOT NULL DEFAULT 1,
+    created_at BIGINT NOT NULL
+  );
+
   ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS deck_style TEXT NOT NULL DEFAULT 'rider';
 `;
 
 function isPostgresTarget(target) {
@@ -126,6 +165,9 @@ function createSqliteAdapter(filename) {
   if (!userColumns.some((column) => column.name === 'avatar')) {
     raw.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
   }
+  if (!userColumns.some((column) => column.name === 'deck_style')) {
+    raw.exec("ALTER TABLE users ADD COLUMN deck_style TEXT NOT NULL DEFAULT 'rider'");
+  }
 
   const adapter = {
     kind: 'sqlite',
@@ -136,7 +178,8 @@ function createSqliteAdapter(filename) {
       return raw.prepare(sql).get(...normalizeParams(params)) || null;
     },
     execute(sql, params) {
-      return raw.prepare(sql).run(...normalizeParams(params));
+      const info = raw.prepare(sql).run(...normalizeParams(params));
+      return { rowCount: Number(info.changes), lastInsertRowid: Number(info.lastInsertRowid) };
     },
     insert(sql, params) {
       const info = raw.prepare(sql).run(...normalizeParams(params));

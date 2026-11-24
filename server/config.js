@@ -64,6 +64,24 @@ function loadConfig() {
     throw new Error('EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID and EMAILJS_PUBLIC_KEY are required when MAIL_MODE=emailjs');
   }
 
+  let inviteCodes = {
+    rose: 'ROSE-PRISM',
+    malachite: 'MALACHITE-GREEN',
+    eclipse: 'ECLIPSE-MOON',
+    gilded: 'GILDED-SUN',
+    abyss: 'ABYSS-STAR',
+    terracotta: 'TERRACOTTA-CLAY',
+    aurora: 'AURORA-LIGHT'
+  };
+  if (process.env.DECK_INVITE_CODES) {
+    try {
+      const parsed = JSON.parse(process.env.DECK_INVITE_CODES);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) inviteCodes = parsed;
+    } catch (error) {
+      throw new Error('DECK_INVITE_CODES must be valid JSON');
+    }
+  }
+
   let providerOverrides = {};
   try {
     providerOverrides = process.env.PROVIDER_OVERRIDES ? JSON.parse(process.env.PROVIDER_OVERRIDES) : {};
@@ -124,7 +142,13 @@ function loadConfig() {
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean),
-    providerOverrides
+    providerOverrides,
+    deck: {
+      price: decimalFromEnv('DECK_PRICE', 9.9),
+      paymentQrUrl: String(process.env.DECK_PAYMENT_QR_URL || '').trim(),
+      inviteCodes,
+      inviteMaxUses: numberFromEnv('DECK_INVITE_MAX_USES', 100)
+    }
   };
 }
 

@@ -24,6 +24,7 @@ function publicUser(user) {
     id: Number(user.id),
     email: user.email,
     avatar: user.avatar || '',
+    deckStyle: user.deck_style || 'rider',
     createdAt: Number(user.created_at),
     lastLoginAt: user.last_login_at ? Number(user.last_login_at) : null
   };

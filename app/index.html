@@ -189,6 +189,27 @@
         </div>
       </section>
 
+      <!-- ================= 牌阵总览 ================= -->
+      <section class="screen screen--spread-preview" id="screen-spread-preview" data-screen="spread-preview" aria-label="牌阵总览" aria-hidden="true">
+        <header class="topbar">
+          <button class="icon-btn" type="button" data-action="back-to-input" aria-label="返回修改牌面">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 18l-6-6 6-6"></path></svg>
+          </button>
+          <span class="topbar__title">牌阵总览</span>
+          <span class="topbar__aside" id="spreadPreviewAside">—</span>
+        </header>
+        <div class="page page--spread-preview" id="spreadPreviewContent"></div>
+        <div class="bottom-dock">
+          <div class="bottom-dock__inner bottom-dock__inner--actions">
+            <button class="btn btn--ghost btn--pill spread-preview__save" type="button" data-action="save-spread">保存牌阵图片</button>
+            <button class="jelly-btn jelly-btn--compact" type="button" data-action="begin-reading">
+              <span class="jelly-btn__glow" aria-hidden="true"></span>
+              <span class="jelly-btn__text"><strong>开始解读</strong><small>START THE READING</small></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= 思考中 ================= -->
       <section class="screen screen--thinking" id="screen-thinking" data-screen="thinking" aria-label="正在生成塔罗解读" aria-hidden="true">
         <div class="thinking">
@@ -346,6 +367,17 @@
         </button>
       </div>
     </section>
+  </div>
+
+  <div class="spread-export" id="spreadExport" hidden>
+    <div class="spread-export__card" role="dialog" aria-modal="true" aria-labelledby="spreadExportTitle">
+      <div class="spread-export__head">
+        <strong id="spreadExportTitle">牌阵图片</strong>
+        <button class="text-btn" type="button" data-action="close-spread-export">关闭</button>
+      </div>
+      <img class="spread-export__preview" id="spreadExportPreview" alt="高清牌阵图片">
+      <p>图片已生成。若没有自动保存，请长按图片选择「保存到相册」。</p>
+    </div>
   </div>
 
   <noscript>

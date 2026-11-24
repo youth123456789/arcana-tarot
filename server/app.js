@@ -8,12 +8,15 @@ const { createMailer } = require('./mail');
 const { createAuthRouter } = require('./routes/auth');
 const { createKeysRouter } = require('./routes/keys');
 const { createReadingsRouter } = require('./routes/readings');
+const { createDecksRouter } = require('./routes/decks');
+const { ensureDeckInviteCodes } = require('./services/decks');
 
 async function createApp(config, dependencies = {}) {
   const app = express();
   app.disable('x-powered-by');
 
   const db = (dependencies.db ? await dependencies.db : null) || await createDatabase(config.databaseUrl || config.dbPath);
+  if (!dependencies.skipDeckSeed) await ensureDeckInviteCodes(db, config);
   const mailer = dependencies.mailer || createMailer(config);
   app.locals.db = db;
   app.locals.mailer = mailer;
@@ -59,6 +62,7 @@ async function createApp(config, dependencies = {}) {
   app.use('/api/auth', createAuthRouter({ config, db, mailer }));
   app.use('/api/keys', createKeysRouter({ config, db }));
   app.use('/api/readings', createReadingsRouter({ config, db }));
+  app.use('/api/decks', createDecksRouter({ config, db }));
 
   app.get(['/', '/index.html'], (request, response) => {
     response.set('Cache-Control', 'no-cache');
