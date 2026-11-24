@@ -2582,6 +2582,38 @@ h1, h2, h3 {
   border-radius: 2px;
 }
 
+.card-face__image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .94;
+}
+.card-face.has-image .card-face__art { display: none; }
+.card-face.has-image .card-face__name {
+  padding-top: 10px;
+  padding-bottom: 8px;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, .75);
+  background: linear-gradient(180deg, transparent, rgba(5, 3, 8, .5));
+}
+.card-face.has-image .card-face__numeral {
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(8, 6, 12, .42);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+.card-face.deck-style--rider .card-face__image { filter: saturate(.88) contrast(1.02); }
+.card-face.deck-style--rose .card-face__image { filter: grayscale(.65) sepia(.22) hue-rotate(285deg) saturate(1.45) brightness(.88) contrast(1.08); }
+.card-face.deck-style--malachite .card-face__image { filter: grayscale(1) sepia(1) hue-rotate(80deg) saturate(1.7) brightness(.78) contrast(1.08); }
+.card-face.deck-style--eclipse .card-face__image { filter: grayscale(1) contrast(1.18) brightness(.82); }
+.card-face.deck-style--gilded .card-face__image { filter: sepia(.78) saturate(1.35) brightness(.82) contrast(1.08); }
+.card-face.deck-style--abyss .card-face__image { filter: grayscale(1) sepia(1) hue-rotate(155deg) saturate(1.9) brightness(.68) contrast(1.1); }
+.card-face.deck-style--terracotta .card-face__image { filter: sepia(.72) saturate(1.45) hue-rotate(-16deg) brightness(.94) contrast(1.02); }
+.card-face.deck-style--aurora .card-face__image { filter: grayscale(.55) hue-rotate(225deg) saturate(1.55) brightness(.82) contrast(1.08); }
+.card-face.deck-style--rider .card-face__image { opacity: .98; }
+
 .card-face__numeral {
   position: absolute;
   top: 6%;

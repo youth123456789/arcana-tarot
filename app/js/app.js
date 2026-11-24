@@ -181,6 +181,27 @@
     }
   ];
 
+  var CARD_IMAGE_BASE = 'assets/cards/rider/';
+  var MAJOR_IMAGE_FILES = [
+    '00_Fool', '01_Magician', '02_High_Priestess', '03_Empress', '04_Emperor', '05_Hierophant',
+    '06_Lovers', '07_Chariot', '08_Strength', '09_Hermit', '10_Wheel_of_Fortune', '11_Justice',
+    '12_Hanged_Man', '13_Death', '14_Temperance', '15_Devil', '16_Tower', '17_Star',
+    '18_Moon', '19_Sun', '20_Judgement', '21_World'
+  ];
+  var MINOR_IMAGE_SUITS = { cups: 'Cups', wands: 'Wands', swords: 'Swords', pentacles: 'Pents' };
+
+  function cardImageUrl(card) {
+    if (!card || !card.id) return '';
+    var major = /^major-(\d{2})$/.exec(card.id);
+    if (major) {
+      var file = MAJOR_IMAGE_FILES[Number(major[1])];
+      return file ? CARD_IMAGE_BASE + file + '.webp' : '';
+    }
+    var minor = /^(cups|wands|swords|pentacles)-(\d{2})$/.exec(card.id);
+    if (minor) return CARD_IMAGE_BASE + MINOR_IMAGE_SUITS[minor[1]] + minor[2] + '.webp';
+    return '';
+  }
+
   function deckStyleById(id) {
     return DECK_STYLES.filter(function (item) { return item.id === id; })[0] || null;
   }
@@ -697,7 +718,9 @@
      ========================================================= */
   function cardFaceMarkup(card, reversed, styleId) {
     var style = deckStyleById(styleId || state.deckStyle) || DECK_STYLES[0];
-    return '<span class="card-face ' + deckStyleClass(style.id) + ' card-suit--' + card.suitKey + (reversed ? ' is-reversed' : '') + '">' +
+    var imageUrl = cardImageUrl(card);
+    return '<span class="card-face ' + deckStyleClass(style.id) + ' card-suit--' + card.suitKey + (reversed ? ' is-reversed' : '') + (imageUrl ? ' has-image' : '') + '">' +
+      (imageUrl ? '<img class="card-face__image" src="' + imageUrl + '" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove(\'has-image\');this.remove();">' : '') +
       '<span class="card-face__numeral">' + escapeHTML(card.numeral) + '</span>' +
       '<span class="card-face__numeral card-face__numeral--br">' + escapeHTML(card.numeral) + '</span>' +
       '<span class="card-face__art">' + iconMarkup(card.glyph) + '</span>' +
