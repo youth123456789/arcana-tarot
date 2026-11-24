@@ -104,7 +104,7 @@ EmailJS 免费计划不需要域名或手机验证，可以通过 SMTP 连接你
 7. To Email 填 `{{to_email}}`，Subject 填 `ARCANA 登录验证码`，正文里放 `{{code}}`；
 8. 保存后记下 Template ID；
 9. 进入 Account → General，复制 Public Key；
-10. 进入 Account → Security，启用 Private Key 并复制。
+10. Private Key 可选；如果要更严格，进入 Account → Security 启用并复制。
 
 免费额度约 200 封/月。
 
@@ -115,7 +115,6 @@ MAIL_MODE=emailjs
 EMAILJS_SERVICE_ID=Service ID
 EMAILJS_TEMPLATE_ID=Template ID
 EMAILJS_PUBLIC_KEY=Public Key
-EMAILJS_PRIVATE_KEY=Private Key
 ```
 
 模板里的变量名必须是：
@@ -155,7 +154,6 @@ DATABASE_URL=第 1 步的 Neon 连接串
 EMAILJS_SERVICE_ID=第 2 步的 Service ID
 EMAILJS_TEMPLATE_ID=第 2 步的 Template ID
 EMAILJS_PUBLIC_KEY=第 2 步的 Public Key
-EMAILJS_PRIVATE_KEY=第 2 步的 Private Key
 ```
 
 `APP_SECRET` 会自动生成，不要手动改。改了以后已经保存的 API Key 会解不开。

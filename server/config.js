@@ -60,8 +60,8 @@ function loadConfig() {
   if (mailMode === 'mailjet' && (!mailjetApiKey || !mailjetApiSecret || !mailFrom)) {
     throw new Error('MAILJET_API_KEY, MAILJET_API_SECRET and MAIL_FROM are required when MAIL_MODE=mailjet');
   }
-  if (mailMode === 'emailjs' && (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey || !emailjsPrivateKey)) {
-    throw new Error('EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY and EMAILJS_PRIVATE_KEY are required when MAIL_MODE=emailjs');
+  if (mailMode === 'emailjs' && (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey)) {
+    throw new Error('EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID and EMAILJS_PUBLIC_KEY are required when MAIL_MODE=emailjs');
   }
 
   let providerOverrides = {};

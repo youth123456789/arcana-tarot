@@ -195,7 +195,7 @@ function createEmailJsMailer(config) {
             service_id: serviceId,
             template_id: templateId,
             user_id: publicKey,
-            accessToken: privateKey,
+            ...(privateKey ? { accessToken: privateKey } : {}),
             template_params: {
               to_email: email,
               code,
