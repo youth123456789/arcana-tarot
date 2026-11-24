@@ -369,6 +369,29 @@
     </section>
   </div>
 
+  <div class="deck-purchase-modal" id="deckPurchase" hidden>
+    <div class="deck-purchase-modal__backdrop" data-action="close-deck-purchase"></div>
+    <section class="deck-purchase-modal__card" role="dialog" aria-modal="true" aria-labelledby="deckPurchaseTitle">
+      <button class="icon-btn deck-purchase-modal__close" type="button" data-action="close-deck-purchase" aria-label="关闭购买弹窗">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+      <p class="eyebrow"><span class="eyebrow__line"></span>UNLOCK THE DECK</p>
+      <h2 id="deckPurchaseTitle">解锁牌面</h2>
+      <p class="deck-purchase-modal__lead" id="deckPurchaseLead">扫描收款码后，向作者索取该风格的内部码。</p>
+      <div class="deck-purchase-modal__qr" id="deckPurchaseQr"></div>
+      <div class="deck-purchase-modal__price"><span>¥</span><strong id="deckPurchaseAmount">9.9</strong><small>一次解锁 · 永久使用</small></div>
+      <label class="deck-purchase-modal__field" for="deckInvite">
+        <span>已有内部码</span>
+        <input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入内部码">
+      </label>
+      <button class="jelly-btn jelly-btn--compact deck-purchase-modal__submit" type="button" data-action="unlock-deck">
+        <span class="jelly-btn__glow" aria-hidden="true"></span>
+        <span class="jelly-btn__text"><strong>验证并解锁</strong><small>UNLOCK DECK</small></span>
+      </button>
+      <p class="profile-error" id="deckPurchaseError"></p>
+    </section>
+  </div>
+
   <div class="spread-export" id="spreadExport" hidden>
     <div class="spread-export__card" role="dialog" aria-modal="true" aria-labelledby="spreadExportTitle">
       <div class="spread-export__head">

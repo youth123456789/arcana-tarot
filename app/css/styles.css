@@ -5264,6 +5264,11 @@ h1, h2, h3 {
 .deck-card__selected { top: 6px; right: 6px; padding: 3px 6px; color: #171023; background: var(--gold); font-size: 7px; }
 .deck-card__lock { top: 6px; left: 6px; width: 24px; height: 24px; color: var(--gold-soft); background: rgba(8, 5, 14, .72); border: 1px solid rgba(226, 201, 165, .3); }
 .deck-card__lock svg { width: 13px; height: 13px; }
+.deck-card__star { position: absolute; top: 6px; left: 6px; z-index: 3; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid rgba(226, 201, 165, .26); border-radius: 999px; color: rgba(226, 201, 165, .58); background: rgba(8, 5, 14, .62); }
+.deck-card__star svg { width: 13px; height: 13px; fill: transparent; stroke: currentColor; stroke-width: 1.3; }
+.deck-card__star.is-lit { color: #2a1c0d; background: var(--gold); border-color: rgba(255, 237, 194, .8); box-shadow: 0 0 14px rgba(226, 201, 165, .35); }
+.deck-card__star.is-lit svg { fill: currentColor; stroke: none; }
+.deck-card.is-selected { border-color: rgba(226, 201, 165, .5); box-shadow: 0 0 0 1px rgba(226, 201, 165, .12), 0 12px 30px rgba(0, 0, 0, .22); }
 .deck-card__name { display: block; overflow: hidden; margin-top: 8px; color: var(--ink-soft); font-family: var(--serif); font-size: 13px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .deck-card__en { display: block; margin-top: 2px; color: var(--faint); font-family: var(--latin); font-size: 7px; letter-spacing: .08em; }
 .deck-card__badge { display: inline-block; align-self: flex-start; margin-top: 6px; padding: 2px 6px; border: 1px solid rgba(226, 201, 165, .22); border-radius: 999px; color: var(--gold-soft); font-size: 7.5px; }
@@ -5399,3 +5404,434 @@ h1, h2, h3 {
 .spread-export__head button { color: var(--faint); }
 .spread-export__preview { display: block; width: 100%; height: auto; border-radius: 10px; }
 .spread-export__card p { margin-top: 10px; color: var(--faint); font-size: 9px; line-height: 1.6; }
+
+/* ===== Deck material language ===== */
+.card-face {
+  --deck-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='.55'/%3E%3C/svg%3E");
+}
+.card-face::before,
+.card-face::after { z-index: 2; pointer-events: none; }
+.card-face__material {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--mat-opacity, .34);
+  mix-blend-mode: var(--mat-blend, overlay);
+  background: var(--mat);
+  background-size: var(--mat-size, auto);
+  transition: opacity .35s ease;
+}
+.card-face.has-image .card-face__material { opacity: var(--mat-opacity, .38); }
+.card-face.deck-style--rider {
+  --mat: var(--deck-grain);
+  --mat-opacity: .2;
+  --mat-blend: multiply;
+  --mat-size: 140px 140px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 24px rgba(82, 52, 26, .24);
+}
+.card-face.deck-style--rider::after {
+  inset: 3%;
+  border: 1px solid rgba(91, 63, 38, .22);
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 49.8%, rgba(91, 63, 38, .12) 50%, transparent 50.2%);
+}
+.card-face.deck-style--rose {
+  --mat: repeating-linear-gradient(118deg, rgba(255, 177, 220, .18) 0 2px, transparent 2px 8px, rgba(177, 239, 255, .2) 8px 10px, transparent 10px 17px), conic-gradient(from 210deg at 30% 20%, rgba(255, 178, 224, .4), rgba(158, 220, 255, .34), rgba(210, 176, 255, .42), rgba(255, 232, 190, .35), rgba(255, 178, 224, .4)), var(--deck-grain);
+  --mat-opacity: .52;
+  --mat-blend: color-dodge;
+  --mat-size: 180% 180%, 180% 180%, 140px 140px;
+  border-radius: 22px 4px 22px 4px;
+  animation: deck-foil-drift 11s linear infinite;
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 248, .28), inset 0 0 30px rgba(255, 160, 210, .2);
+}
+.card-face.deck-style--rose::before { inset: 5%; border-radius: 16px 2px 16px 2px; border-color: rgba(255, 222, 239, .55); }
+.card-face.deck-style--rose::after {
+  inset: 0;
+  background: linear-gradient(112deg, transparent 18%, rgba(255, 255, 255, .34) 42%, transparent 50%, rgba(255, 164, 230, .2) 64%, transparent 76%);
+  mix-blend-mode: screen;
+}
+.card-face.deck-style--malachite {
+  --mat: repeating-linear-gradient(118deg, rgba(7, 39, 29, .72) 0 13px, rgba(81, 153, 117, .28) 13px 21px, rgba(9, 53, 39, .78) 21px 33px, rgba(158, 211, 175, .16) 33px 36px), radial-gradient(ellipse at 32% 22%, rgba(174, 230, 194, .32), transparent 48%), var(--deck-grain);
+  --mat-opacity: .6;
+  --mat-blend: overlay;
+  --mat-size: 160% 160%, 100% 100%, 120px 120px;
+  border-radius: 40% 40% 7px 7px / 13% 13% 7px 7px;
+  box-shadow: inset 0 0 0 1px rgba(210, 243, 220, .22), inset 0 0 28px rgba(0, 20, 13, .55);
+}
+.card-face.deck-style--malachite::before {
+  inset: 7% 7% 12%;
+  border: 1px solid rgba(205, 238, 215, .35);
+  border-radius: 50% 50% 4px 4px / 22% 22% 4px 4px;
+}
+.card-face.deck-style--malachite::after {
+  inset: 0;
+  background: linear-gradient(125deg, transparent 33%, rgba(215, 249, 224, .16) 46%, transparent 52%);
+}
+.card-face.deck-style--eclipse {
+  --mat: repeating-linear-gradient(0deg, rgba(210, 224, 255, .08) 0 1px, transparent 1px 4px), repeating-linear-gradient(90deg, rgba(210, 224, 255, .06) 0 1px, transparent 1px 7px), radial-gradient(circle at 72% 22%, rgba(236, 242, 255, .42) 0 7%, rgba(163, 178, 211, .12) 8% 26%, transparent 27%), var(--deck-grain);
+  --mat-opacity: .4;
+  --mat-blend: screen;
+  --mat-size: auto, auto, 100% 100%, 140px 140px;
+  border-radius: 1px;
+  box-shadow: inset 0 0 0 1px rgba(230, 237, 255, .25), inset 0 0 30px rgba(194, 205, 235, .12);
+}
+.card-face.deck-style--eclipse::before { inset: 5%; border-color: rgba(229, 236, 255, .28); border-radius: 0; }
+.card-face.deck-style--eclipse::after {
+  inset: 16% 8%;
+  border-top: 1px solid rgba(229, 236, 255, .2);
+  border-bottom: 1px solid rgba(229, 236, 255, .1);
+  border-radius: 50%;
+  transform: rotate(-18deg);
+}
+.card-face.deck-style--gilded {
+  --mat: repeating-conic-gradient(from 30deg at 50% 45%, rgba(255, 230, 164, .24) 0 2deg, transparent 2deg 14deg), radial-gradient(circle at 50% 34%, rgba(255, 222, 143, .32), transparent 55%), var(--deck-grain);
+  --mat-opacity: .55;
+  --mat-blend: color-dodge;
+  --mat-size: 100% 100%, 100% 100%, 150px 150px;
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 1px rgba(255, 232, 175, .42), inset 0 0 0 4px rgba(233, 201, 129, .08), inset 0 0 34px rgba(220, 168, 65, .18);
+}
+.card-face.deck-style--gilded::before {
+  inset: 6%;
+  border: 1px solid rgba(255, 228, 160, .58);
+  box-shadow: inset 0 0 0 3px rgba(233, 201, 129, .1);
+}
+.card-face.deck-style--gilded::after {
+  inset: 2.5%;
+  border: 1px solid rgba(233, 201, 129, .18);
+  background: linear-gradient(90deg, transparent 0 49.7%, rgba(255, 231, 170, .18) 50%, transparent 50.3%);
+}
+.card-face.deck-style--abyss {
+  --mat: repeating-radial-gradient(ellipse at 30% 68%, transparent 0 7px, rgba(142, 239, 238, .1) 8px 9px, transparent 10px 18px), repeating-linear-gradient(14deg, transparent 0 16px, rgba(128, 231, 235, .08) 17px 18px, transparent 19px 34px), radial-gradient(circle at 68% 18%, rgba(166, 248, 244, .3), transparent 31%), var(--deck-grain);
+  --mat-opacity: .5;
+  --mat-blend: screen;
+  --mat-size: 160% 160%, 180% 180%, 100% 100%, 130px 130px;
+  border-radius: 50% 50% 6px 6px / 11% 11% 6px 6px;
+  animation: deck-water-drift 16s ease-in-out infinite alternate;
+  box-shadow: inset 0 0 0 1px rgba(153, 243, 242, .24), inset 0 0 34px rgba(38, 167, 180, .2);
+}
+.card-face.deck-style--abyss::before {
+  inset: 6%;
+  border-color: rgba(179, 249, 247, .28);
+  border-radius: 50% 50% 4px 4px / 9% 9% 4px 4px;
+}
+.card-face.deck-style--abyss::after {
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(2, 20, 29, .46));
+  border: 0;
+}
+.card-face.deck-style--terracotta {
+  --mat: repeating-linear-gradient(87deg, transparent 0 7px, rgba(85, 38, 26, .22) 8px 9px, transparent 10px 19px), repeating-linear-gradient(3deg, transparent 0 14px, rgba(255, 222, 186, .12) 15px 17px, transparent 18px 29px), var(--deck-grain);
+  --mat-opacity: .68;
+  --mat-blend: multiply;
+  --mat-size: 100% 100%, 100% 100%, 110px 110px;
+  border-radius: 3px;
+  clip-path: polygon(2% 0, 98% 1%, 100% 5%, 99% 94%, 96% 100%, 3% 99%, 0 95%, 1% 4%);
+  box-shadow: inset 0 0 0 1px rgba(255, 226, 190, .35), inset 0 0 30px rgba(80, 35, 22, .32);
+}
+.card-face.deck-style--terracotta::before { inset: 6%; border-color: rgba(255, 232, 202, .28); border-style: dashed; border-radius: 0; }
+.card-face.deck-style--terracotta::after {
+  inset: 0;
+  border: 0;
+  background: linear-gradient(90deg, rgba(67, 29, 19, .22), transparent 16% 84%, rgba(67, 29, 19, .22));
+}
+.card-face.deck-style--aurora {
+  --mat: radial-gradient(ellipse at 18% 22%, rgba(96, 255, 218, .42), transparent 43%), radial-gradient(ellipse at 78% 24%, rgba(176, 145, 255, .4), transparent 48%), radial-gradient(ellipse at 48% 82%, rgba(255, 137, 218, .3), transparent 47%), var(--deck-grain);
+  --mat-opacity: .58;
+  --mat-blend: screen;
+  --mat-size: 150% 150%, 160% 160%, 150% 150%, 160px 160px;
+  border-radius: 24px;
+  animation: deck-aurora-flow 18s ease-in-out infinite alternate;
+  box-shadow: inset 0 0 0 1px rgba(242, 230, 255, .32), inset 0 0 36px rgba(145, 121, 255, .2);
+}
+.card-face.deck-style--aurora::before { inset: 4%; border-color: rgba(238, 227, 255, .38); border-radius: 20px; }
+.card-face.deck-style--aurora::after {
+  inset: 0;
+  border: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, .22) 44%, transparent 52%, rgba(142, 237, 255, .14) 66%, transparent 78%);
+  mix-blend-mode: screen;
+}
+.card-face.deck-style--rose .card-face__name,
+.card-face.deck-style--malachite .card-face__name,
+.card-face.deck-style--eclipse .card-face__name,
+.card-face.deck-style--gilded .card-face__name,
+.card-face.deck-style--abyss .card-face__name,
+.card-face.deck-style--aurora .card-face__name { text-shadow: 0 1px 6px rgba(0, 0, 0, .65); }
+.card-face.deck-style--terracotta .card-face__name,
+.card-face.deck-style--rider .card-face__name { text-shadow: 0 1px 4px rgba(255, 244, 222, .5); }
+.card-face.deck-style--terracotta .card-face__material,
+.card-face.deck-style--rider .card-face__material { mix-blend-mode: multiply; }
+.card-back { position: relative; overflow: hidden; }
+.card-back { --deck-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='.55'/%3E%3C/svg%3E"); }
+.card-back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--deck-grain);
+  opacity: .18;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.card-back__star, .card-back__dot { position: relative; z-index: 1; }
+@keyframes deck-foil-drift {
+  0% { background-position: 0% 50%, 0% 50%, 0 0; }
+  100% { background-position: 200% 50%, 200% 50%, 0 0; }
+}
+@keyframes deck-water-drift {
+  0% { background-position: 0% 0%, 0% 0%, 50% 30%, 0 0; }
+  100% { background-position: 18% 8%, 6% 12%, 54% 26%, 0 0; }
+}
+@keyframes deck-aurora-flow {
+  0% { background-position: 0% 20%, 100% 40%, 40% 100%, 0 0; }
+  100% { background-position: 40% 40%, 60% 10%, 70% 60%, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-face.deck-style--rose,
+  .card-face.deck-style--abyss,
+  .card-face.deck-style--aurora { animation: none; }
+}
+
+/* ===== Deck buy bar / purchase modal ===== */
+.deck-buy-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin: 16px -2px -6px;
+  padding: 18px 2px calc(var(--safe-bottom) + 8px);
+  background: linear-gradient(180deg, transparent, rgba(7, 4, 13, .92) 38%);
+}
+.deck-buy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid rgba(226, 201, 165, .42);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, .035);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: .06em;
+  transition: background .25s ease, border-color .25s ease, transform .25s ease;
+}
+.deck-buy-btn:active { transform: scale(.985); background: rgba(255, 255, 255, .08); }
+.deck-buy-btn span { color: var(--gold-soft); font-family: var(--latin); font-size: 16px; letter-spacing: .02em; }
+.deck-purchase-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: end center;
+  padding: 16px 14px calc(var(--safe-bottom) + 14px);
+}
+.deck-purchase-modal[hidden] { display: none; }
+.deck-purchase-modal__backdrop { position: absolute; inset: 0; background: rgba(3, 2, 7, .79); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.deck-purchase-modal__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+  max-height: 92dvh;
+  overflow: auto;
+  padding: 22px 20px calc(var(--safe-bottom) + 20px);
+  border: 1px solid rgba(226, 201, 165, .26);
+  border-radius: 22px;
+  background: linear-gradient(165deg, rgba(27, 18, 41, .98), rgba(10, 6, 17, .99));
+  box-shadow: 0 -22px 70px rgba(0, 0, 0, .55);
+}
+.deck-purchase-modal__close { position: absolute; top: 14px; right: 14px; }
+.deck-purchase-modal__card h2 { margin-top: 10px; font-family: var(--serif); font-size: 26px; font-weight: 400; letter-spacing: .04em; }
+.deck-purchase-modal__lead { margin-top: 7px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.deck-purchase-modal__qr {
+  display: grid;
+  place-items: center;
+  width: 178px;
+  height: 178px;
+  margin: 17px auto 12px;
+  border: 1px dashed rgba(226, 201, 165, .26);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .025);
+  overflow: hidden;
+}
+.deck-purchase-modal__qr img { width: 100%; height: 100%; object-fit: contain; }
+.deck-purchase-modal__qr-placeholder { display: grid; place-items: center; gap: 3px; color: var(--faint); font-size: 10px; }
+.deck-purchase-modal__qr-placeholder strong { color: var(--gold-soft); font-family: var(--serif); font-size: 15px; font-weight: 400; }
+.deck-purchase-modal__qr-placeholder small { font-size: 8px; }
+.deck-purchase-modal__price { display: flex; align-items: baseline; justify-content: center; gap: 4px; color: var(--gold-soft); }
+.deck-purchase-modal__price span { font-family: var(--latin); font-size: 14px; }
+.deck-purchase-modal__price strong { font-family: var(--latin); font-size: 34px; font-weight: 400; letter-spacing: -.02em; }
+.deck-purchase-modal__price small { margin-left: 6px; color: var(--faint); font-size: 8px; }
+.deck-purchase-modal__field { display: block; margin-top: 14px; }
+.deck-purchase-modal__field > span { display: block; margin-bottom: 6px; color: var(--faint); font-size: 8px; letter-spacing: .08em; }
+.deck-purchase-modal__field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(226, 201, 165, .2);
+  border-radius: 11px;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, .035);
+  font-family: var(--latin);
+  font-size: 12px;
+  letter-spacing: .06em;
+  outline: none;
+}
+.deck-purchase-modal__field input:focus { border-color: rgba(226, 201, 165, .55); }
+.deck-purchase-modal__submit { width: 100%; margin-top: 10px; }
+
+/* ===== Stronger material differentiation ===== */
+.card-face__material { opacity: var(--mat-opacity, .5); filter: contrast(1.08) saturate(1.12); }
+.card-face.deck-style--rose {
+  --mat:
+    repeating-linear-gradient(118deg, rgba(255, 170, 220, .36) 0 3px, rgba(90, 220, 255, .22) 3px 6px, rgba(255, 235, 160, .2) 6px 9px, transparent 9px 18px),
+    conic-gradient(from 215deg at 28% 22%, rgba(255, 126, 197, .7), rgba(118, 214, 255, .58), rgba(197, 131, 255, .65), rgba(255, 239, 166, .5), rgba(255, 126, 197, .7)),
+    var(--deck-grain);
+  --mat-opacity: .74;
+  --mat-blend: color-dodge;
+  --mat-size: 220% 220%, 220% 220%, 140px 140px;
+  clip-path: polygon(7% 0, 93% 0, 100% 7%, 100% 93%, 93% 100%, 7% 100%, 0 93%, 0 7%);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 235, 250, .4), inset 0 0 34px rgba(255, 142, 211, .25);
+}
+.card-face.deck-style--rose::before { inset: 5%; border-radius: 0; border-color: rgba(255, 229, 245, .7); box-shadow: inset 0 0 0 1px rgba(255, 161, 225, .2); }
+.card-face.deck-style--rose::after {
+  background:
+    radial-gradient(circle at 12% 9%, rgba(255, 255, 255, .85) 0 1px, transparent 2px),
+    radial-gradient(circle at 85% 22%, rgba(181, 252, 255, .8) 0 1px, transparent 2px),
+    linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, .4) 43%, transparent 50%, rgba(255, 164, 230, .3) 64%, transparent 76%);
+  mix-blend-mode: screen;
+}
+.card-face.deck-style--malachite {
+  --mat:
+    repeating-linear-gradient(118deg, rgba(5, 39, 28, .9) 0 9px, rgba(95, 172, 130, .48) 9px 14px, rgba(5, 46, 32, .92) 14px 24px, rgba(206, 238, 214, .28) 24px 26px, rgba(8, 54, 38, .9) 26px 39px),
+    repeating-linear-gradient(66deg, transparent 0 31px, rgba(229, 255, 231, .3) 32px 33px, transparent 34px 61px),
+    radial-gradient(ellipse at 28% 20%, rgba(202, 248, 215, .45), transparent 42%),
+    var(--deck-grain);
+  --mat-opacity: .82;
+  --mat-blend: overlay;
+  --mat-size: 190% 190%, 190% 190%, 100% 100%, 120px 120px;
+  border-radius: 44% 44% 5px 5px / 18% 18% 5px 5px;
+  box-shadow: inset 0 0 0 1px rgba(213, 246, 222, .36), inset 0 0 38px rgba(0, 18, 11, .65);
+}
+.card-face.deck-style--malachite::before { inset: 7% 8% 12%; border: 1px solid rgba(223, 249, 229, .5); border-radius: 50% 50% 3px 3px / 23% 23% 3px 3px; box-shadow: inset 0 0 0 3px rgba(183, 232, 197, .1); }
+.card-face.deck-style--eclipse {
+  --mat:
+    repeating-linear-gradient(0deg, rgba(220, 232, 255, .16) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(220, 232, 255, .12) 0 1px, transparent 1px 6px),
+    radial-gradient(circle at 74% 22%, rgba(250, 253, 255, .92) 0 6%, rgba(184, 200, 233, .4) 6.5% 24%, transparent 25%),
+    radial-gradient(circle at 50% 50%, transparent 0 45%, rgba(4, 5, 10, .7) 46% 100%),
+    var(--deck-grain);
+  --mat-opacity: .62;
+  --mat-blend: screen;
+  --mat-size: auto, auto, 100% 100%, 100% 100%, 130px 130px;
+  box-shadow: inset 0 0 0 1px rgba(238, 243, 255, .34), inset 0 0 44px rgba(138, 153, 190, .24);
+}
+.card-face.deck-style--eclipse::before { inset: 4%; border: 1px solid rgba(239, 243, 255, .35); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.card-face.deck-style--eclipse::after {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 45%, rgba(230, 238, 255, .14) 46% 47%, transparent 48%),
+    linear-gradient(90deg, rgba(223, 232, 255, .18), transparent 18% 82%, rgba(223, 232, 255, .18));
+}
+.card-face.deck-style--gilded {
+  --mat:
+    repeating-conic-gradient(from 20deg at 50% 42%, rgba(255, 229, 155, .42) 0 3deg, transparent 3deg 12deg),
+    repeating-linear-gradient(45deg, rgba(255, 239, 188, .2) 0 1px, transparent 1px 7px),
+    radial-gradient(circle at 50% 30%, rgba(255, 231, 157, .48), transparent 55%),
+    var(--deck-grain);
+  --mat-opacity: .72;
+  --mat-blend: color-dodge;
+  --mat-size: 100% 100%, auto, 100% 100%, 140px 140px;
+  border-radius: 13px;
+  box-shadow: inset 0 0 0 2px rgba(255, 231, 166, .46), inset 0 0 0 6px rgba(228, 188, 104, .1), inset 0 0 38px rgba(220, 168, 65, .24);
+}
+.card-face.deck-style--gilded::before { inset: 6%; border: 1px solid rgba(255, 232, 170, .72); box-shadow: inset 0 0 0 3px rgba(233, 201, 129, .12); }
+.card-face.deck-style--gilded::after {
+  background:
+    radial-gradient(circle at 7% 7%, rgba(255, 246, 212, .9) 0 2px, transparent 3px),
+    radial-gradient(circle at 93% 7%, rgba(255, 246, 212, .8) 0 2px, transparent 3px),
+    radial-gradient(circle at 7% 93%, rgba(255, 246, 212, .65) 0 2px, transparent 3px),
+    radial-gradient(circle at 93% 93%, rgba(255, 246, 212, .8) 0 2px, transparent 3px),
+    linear-gradient(90deg, transparent 0 49.5%, rgba(255, 239, 190, .22) 50%, transparent 50.5%);
+  mix-blend-mode: screen;
+}
+.card-face.deck-style--abyss {
+  --mat:
+    repeating-radial-gradient(ellipse at 28% 71%, transparent 0 8px, rgba(163, 249, 247, .22) 9px 10px, transparent 11px 20px),
+    repeating-linear-gradient(18deg, transparent 0 20px, rgba(143, 238, 240, .17) 21px 23px, transparent 24px 42px),
+    radial-gradient(ellipse at 72% 18%, rgba(169, 250, 246, .45), transparent 32%),
+    linear-gradient(180deg, transparent 48%, rgba(1, 15, 24, .64) 64%),
+    var(--deck-grain);
+  --mat-opacity: .72;
+  --mat-blend: screen;
+  --mat-size: 180% 180%, 200% 200%, 100% 100%, 100% 100%, 130px 130px;
+  border-radius: 50% 50% 4px 4px / 15% 15% 4px 4px;
+  box-shadow: inset 0 0 0 1px rgba(174, 250, 247, .3), inset 0 0 44px rgba(25, 142, 158, .3);
+}
+.card-face.deck-style--abyss::before { inset: 6%; border-color: rgba(190, 253, 250, .4); border-radius: 50% 50% 3px 3px / 12% 12% 3px 3px; }
+.card-face.deck-style--abyss::after {
+  background:
+    radial-gradient(circle at 22% 30%, rgba(221, 255, 252, .85) 0 1px, transparent 2px),
+    radial-gradient(circle at 71% 22%, rgba(191, 255, 251, .7) 0 1px, transparent 2px),
+    linear-gradient(180deg, transparent 48%, rgba(2, 22, 32, .48));
+  border: 0;
+  mix-blend-mode: screen;
+}
+.card-face.deck-style--terracotta {
+  --mat:
+    repeating-linear-gradient(88deg, transparent 0 6px, rgba(70, 29, 19, .48) 7px 8px, transparent 9px 17px),
+    repeating-linear-gradient(4deg, transparent 0 13px, rgba(255, 224, 187, .22) 14px 16px, transparent 17px 27px),
+    repeating-linear-gradient(112deg, rgba(67, 28, 18, .22) 0 2px, transparent 2px 13px),
+    var(--deck-grain);
+  --mat-opacity: .9;
+  --mat-blend: multiply;
+  --mat-size: 100% 100%, 100% 100%, 100% 100%, 100px 100px;
+  clip-path: polygon(3% 0, 14% 1%, 23% 0, 37% 1%, 51% 0, 64% 1%, 78% 0, 89% 1%, 98% 0, 100% 6%, 99% 19%, 100% 33%, 99% 47%, 100% 61%, 99% 76%, 100% 91%, 96% 100%, 83% 98%, 70% 100%, 56% 99%, 41% 100%, 28% 98%, 15% 100%, 4% 99%, 0 94%, 1% 80%, 0 66%, 1% 51%, 0 36%, 1% 20%);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 224, 189, .4), inset 0 0 34px rgba(65, 26, 16, .46);
+}
+.card-face.deck-style--terracotta::before { inset: 5%; border: 1px solid rgba(255, 234, 207, .34); border-style: dashed; border-radius: 0; }
+.card-face.deck-style--terracotta::after {
+  background: linear-gradient(90deg, rgba(62, 26, 17, .4), transparent 14% 86%, rgba(62, 26, 17, .4));
+  border: 0;
+}
+.card-face.deck-style--aurora {
+  --mat:
+    radial-gradient(ellipse at 18% 22%, rgba(96, 255, 218, .62), transparent 44%),
+    radial-gradient(ellipse at 78% 22%, rgba(177, 145, 255, .58), transparent 48%),
+    radial-gradient(ellipse at 48% 84%, rgba(255, 137, 218, .46), transparent 48%),
+    linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, .16) 40%, transparent 47%, rgba(120, 239, 255, .18) 63%, transparent 74%),
+    var(--deck-grain);
+  --mat-opacity: .74;
+  --mat-blend: screen;
+  --mat-size: 160% 160%, 170% 170%, 160% 160%, 220% 220%, 160px 160px;
+  border-radius: 28px;
+  animation: deck-aurora-flow 16s ease-in-out infinite alternate, deck-aurora-hue 22s linear infinite;
+  box-shadow: inset 0 0 0 1px rgba(245, 235, 255, .4), inset 0 0 46px rgba(145, 121, 255, .26);
+}
+.card-face.deck-style--aurora::before { inset: 4%; border-color: rgba(245, 235, 255, .5); border-radius: 24px; }
+.card-face.deck-style--aurora::after {
+  background:
+    radial-gradient(circle at 16% 14%, rgba(255, 255, 255, .7) 0 1px, transparent 2px),
+    linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, .28) 44%, transparent 52%, rgba(142, 237, 255, .2) 66%, transparent 78%);
+  border: 0;
+  mix-blend-mode: screen;
+}
+.card-face.deck-style--rider .card-face__material { opacity: .24; }
+@keyframes deck-aurora-flow {
+  0% { background-position: 0% 20%, 100% 40%, 40% 100%, 0% 50%, 0 0; }
+  100% { background-position: 40% 40%, 60% 10%, 70% 60%, 120% 50%, 0 0; }
+}
+@keyframes deck-aurora-hue {
+  0% { filter: hue-rotate(0deg) contrast(1.08) saturate(1.12); }
+  50% { filter: hue-rotate(26deg) contrast(1.08) saturate(1.2); }
+  100% { filter: hue-rotate(0deg) contrast(1.08) saturate(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-face.deck-style--aurora { animation: none; }
+}

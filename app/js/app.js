@@ -121,6 +121,7 @@
     deckInviteError: '',
     deckPayment: { amount: 9.9, qrUrl: '' },
     deckBusy: false,
+    deckPurchaseOpen: false,
     spreadImageBusy: false,
     avatarPickerOpen: false,
     avatarBusy: false,
@@ -755,6 +756,7 @@
     var imageUrl = cardImageUrl(card);
     return '<span class="card-face ' + deckStyleClass(style.id) + ' card-suit--' + card.suitKey + (reversed ? ' is-reversed' : '') + (imageUrl ? ' has-image' : '') + '">' +
       (imageUrl ? '<img class="card-face__image" src="' + imageUrl + '" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove(\'has-image\');this.remove();">' : '') +
+      '<span class="card-face__material"></span>' +
       '<span class="card-face__numeral">' + escapeHTML(card.numeral) + '</span>' +
       '<span class="card-face__numeral card-face__numeral--br">' + escapeHTML(card.numeral) + '</span>' +
       '<span class="card-face__art">' + iconMarkup(card.glyph) + '</span>' +
@@ -2362,15 +2364,18 @@
     var cards = DECK_STYLES.map(function (style, index) {
       var unlocked = isDeckUnlocked(style.id);
       var selected = state.deckStyle === style.id;
-      var badge = style.free ? '免费' : unlocked ? '已解锁' : '¥9.9';
-      return '<button class="deck-card' + (selected ? ' is-selected' : '') + '" type="button" data-action="open-deck-style" data-deck-style="' + style.id + '" style="--i:' + index + '">' +
+      var stateBadge = selected
+        ? '<span class="deck-card__star is-lit" aria-label="正在使用">' + starMarkup() + '</span>'
+        : unlocked
+          ? '<span class="deck-card__star" aria-label="已拥有">' + starMarkup() + '</span>'
+          : '<span class="deck-card__lock" aria-label="未解锁">' + lockIcon() + '</span>';
+      return '<button class="deck-card' + (selected ? ' is-selected' : '') + (unlocked ? ' is-owned' : ' is-locked') + '" type="button" data-action="open-deck-style" data-deck-style="' + style.id + '" style="--i:' + index + '">' +
         '<span class="deck-card__visual">' + deckSampleMarkup(style.id, 'major-18') +
+          stateBadge +
           (selected ? '<span class="deck-card__selected">使用中</span>' : '') +
-          (!unlocked ? '<span class="deck-card__lock">' + lockIcon() + '</span>' : '') +
         '</span>' +
         '<span class="deck-card__name">' + escapeHTML(style.name) + '</span>' +
         '<span class="deck-card__en">' + escapeHTML(style.en) + '</span>' +
-        '<span class="deck-card__badge' + (unlocked ? ' is-unlocked' : '') + '">' + badge + '</span>' +
       '</button>';
     }).join('');
     return '<div class="deck-intro"><p class="eyebrow"><span class="eyebrow__line"></span>TAROT ATELIER</p><p>每种牌面都是一套独立的视觉语言，牌义与牌阵保持一致。点击牌面预览，选择你此刻想使用的版本。</p></div>' +
@@ -2396,34 +2401,80 @@
         return '<span class="deck-all-card">' + cardFaceMarkup(card, false, style.id) + '</span>';
       }).join('') + '</div>';
     }
+    var payment = state.deckPayment || {};
+    var amount = Number(payment.amount || style.price || 9.9).toFixed(1);
     var action;
-    if (!unlocked) {
-      var payment = state.deckPayment || {};
-      var amount = Number(payment.amount || style.price || 9.9).toFixed(1);
-      var qr = payment.qrUrl
-        ? '<img src="' + escapeHTML(payment.qrUrl) + '" alt="收款码">'
-        : '<span>收款码</span><small>作者尚未配置</small>';
-      action = '<div class="deck-purchase">' +
-        '<div class="deck-purchase__qr">' + qr + '</div>' +
-        '<div class="deck-purchase__copy"><strong>¥' + amount + ' 解锁「' + escapeHTML(style.name) + '」</strong><p>扫码支付后向作者索取该风格的内部码；输入内部码即可解锁。</p></div>' +
-        '<div class="deck-purchase__code"><input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入内部码" value="' + escapeHTML(state.deckInvite) + '"><button class="text-btn" type="button" data-action="unlock-deck"' + (state.deckBusy ? ' disabled' : '') + '>验证</button></div>' +
-        (state.deckInviteError ? '<p class="profile-error">' + escapeHTML(state.deckInviteError) + '</p>' : '') +
-      '</div>';
-    } else {
+    if (unlocked) {
       action = '<button class="jelly-btn jelly-btn--compact deck-select-btn" type="button" data-action="select-deck" data-deck-style="' + style.id + '"' + (selected || state.deckBusy ? ' disabled' : '') + '>' +
         '<span class="jelly-btn__glow" aria-hidden="true"></span><span class="jelly-btn__text"><strong>' + (selected ? '正在使用' : '使用这套牌') + '</strong><small>' + (selected ? 'CURRENT DECK' : 'USE THIS DECK') + '</small></span>' +
       '</button>';
+    } else {
+      action = '<div class="deck-buy-bar">' +
+        '<button class="deck-buy-btn" type="button" data-action="open-deck-purchase">' +
+          '<span>¥' + amount + '</span> 解锁整套牌面' +
+        '</button>' +
+      '</div>';
     }
     return '<button class="text-btn deck-back" type="button" data-action="close-deck-detail">← 返回牌库</button>' +
       '<div class="deck-detail__hero">' +
         '<div class="deck-detail__showcase">' + deckSampleMarkup(style.id, 'major-18') + '</div>' +
-        '<div class="deck-detail__info"><p class="eyebrow"><span class="eyebrow__line"></span>' + (style.free ? 'FREE DECK' : 'PREMIUM DECK') + '</p>' +
+        '<div class="deck-detail__info"><p class="eyebrow"><span class="eyebrow__line"></span>TAROT DECK · 78 CARDS</p>' +
           '<h3>' + escapeHTML(style.name) + '</h3><small>' + escapeHTML(style.en) + '</small>' +
           '<p>' + escapeHTML(style.tagline) + '</p><em>' + escapeHTML(style.note) + '</em></div>' +
       '</div>' +
       '<div class="deck-detail__samples">' + samples + '</div>' +
       '<button class="text-btn deck-all-toggle" type="button" data-action="toggle-deck-all">' + (state.deckShowAll ? '收起全部牌面' : '查看全部 78 张牌') + '</button>' +
       all + action;
+  }
+
+  function renderDeckPurchase() {
+    var style = deckStyleById(state.deckDetail);
+    if (!style) return;
+    var payment = state.deckPayment || {};
+    var amount = Number(payment.amount || style.price || 9.9).toFixed(1);
+    var title = document.getElementById('deckPurchaseTitle');
+    var lead = document.getElementById('deckPurchaseLead');
+    var amountEl = document.getElementById('deckPurchaseAmount');
+    var qr = document.getElementById('deckPurchaseQr');
+    var input = document.getElementById('deckInvite');
+    var error = document.getElementById('deckPurchaseError');
+    if (title) title.textContent = '解锁「' + style.name + '」';
+    if (lead) lead.textContent = payment.qrUrl
+      ? '扫描收款码完成支付后，向作者索取该风格的内部码。'
+      : '收款码尚未配置。可先向作者索取该风格的内部码。';
+    if (amountEl) amountEl.textContent = amount;
+    if (qr) {
+      qr.innerHTML = payment.qrUrl
+        ? '<img src="' + escapeHTML(payment.qrUrl) + '" alt="收款码">'
+        : '<span class="deck-purchase-modal__qr-placeholder"><strong>收款码</strong><small>作者尚未配置</small></span>';
+    }
+    if (input) input.value = state.deckInvite || '';
+    if (error) {
+      error.textContent = state.deckInviteError || '';
+      error.hidden = !state.deckInviteError;
+    }
+  }
+
+  function openDeckPurchase() {
+    var style = deckStyleById(state.deckDetail);
+    if (!style || isDeckUnlocked(style.id)) return;
+    state.deckPurchaseOpen = true;
+    state.deckInvite = '';
+    state.deckInviteError = '';
+    renderDeckPurchase();
+    var modal = document.getElementById('deckPurchase');
+    if (modal) modal.hidden = false;
+    window.setTimeout(function () {
+      var input = document.getElementById('deckInvite');
+      if (input) input.focus({ preventScroll: true });
+    }, 120);
+  }
+
+  function closeDeckPurchase() {
+    state.deckPurchaseOpen = false;
+    state.deckInviteError = '';
+    var modal = document.getElementById('deckPurchase');
+    if (modal) modal.hidden = true;
   }
 
   function openDeckStyle(id) {
@@ -2475,10 +2526,11 @@
     var code = String(state.deckInvite || '').trim();
     if (!code) {
       state.deckInviteError = '请输入内部码。';
-      renderProfile();
+      renderDeckPurchase();
       return;
     }
     if (!window.ArcanaAPI || !ArcanaAPI.getToken()) {
+      closeDeckPurchase();
       state.profileView = 'account';
       renderProfile();
       showToast('登录后才能解锁牌面');
@@ -2486,19 +2538,21 @@
     }
     state.deckBusy = true;
     state.deckInviteError = '';
-    renderProfile();
+    renderDeckPurchase();
     try {
       var payload = await ArcanaAPI.unlockDeck(style.id, code);
       applyDeckState(payload);
       state.deckInvite = '';
       state.deckInviteError = '';
       state.deckBusy = false;
+      state.deckDetail = null;
+      closeDeckPurchase();
       renderProfile();
-      showToast('「' + style.name + '」已解锁');
+      showToast('「' + style.name + '」已解锁并应用');
     } catch (error) {
       state.deckBusy = false;
       state.deckInviteError = error.message || '内部码验证失败。';
-      renderProfile();
+      renderDeckPurchase();
     }
   }
 
@@ -3022,7 +3076,12 @@
       return;
     }
     if (action === 'open-deck-style') {
-      openDeckStyle(element ? element.getAttribute('data-deck-style') : '');
+      var pickedDeck = element ? element.getAttribute('data-deck-style') : '';
+      if (isDeckUnlocked(pickedDeck)) {
+        selectDeck(pickedDeck);
+      } else {
+        openDeckStyle(pickedDeck);
+      }
       return;
     }
     if (action === 'close-deck-detail') {
@@ -3081,6 +3140,14 @@
     }
     if (action === 'save-spread') {
       saveSpreadImage();
+      return;
+    }
+    if (action === 'open-deck-purchase') {
+      openDeckPurchase();
+      return;
+    }
+    if (action === 'close-deck-purchase') {
+      closeDeckPurchase();
       return;
     }
     if (action === 'close-spread-export') {

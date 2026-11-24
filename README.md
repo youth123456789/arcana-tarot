@@ -19,13 +19,9 @@
 | --- | --- |
 | ![个人中心](docs/previews/preview-profile-menu.png) | ![绑定邮箱](docs/previews/preview-profile-account.png) |
 
-| API 配置 | 我的塔罗牌 |
-| --- | --- |
-| ![API 配置](docs/previews/preview-profile-keys.png) | ![牌库](docs/previews/preview-deck-gallery.png) |
-
-| 牌面详情 | 全部 78 张 |
-| --- | --- |
-| ![牌面详情](docs/previews/preview-deck-detail.png) | ![全部牌面](docs/previews/preview-deck-all.png) |
+| API 配置 |
+| --- |
+| ![API 配置](docs/previews/preview-profile-keys.png) |
 
 | 选择牌阵 | 解读结果 |
 | --- | --- |
@@ -89,7 +85,7 @@ DeepSeek、OpenAI、Anthropic Claude、Google Gemini、阿里云百炼 Qwen、Mo
 
 当前提供 8 套牌面风格，默认使用韦特·经典。
 
-- 韦特·经典：免费
+- 韦特·经典
 - 铂金玫瑰·棱镜
 - 孔雀石·绿境
 - 月蚀银辉
@@ -98,31 +94,33 @@ DeepSeek、OpenAI、Anthropic Claude、Google Gemini、阿里云百炼 Qwen、Mo
 - 赤陶秘境
 - 极光棱镜
 
-每套风格使用韦特公版人物画，并配以不同的底色、边框、纹理和色彩处理，可预览全部 78 张牌并应用到实际抽牌界面。部分风格需要通过邀请码解锁，邀请码校验由后端完成。
+每套风格使用韦特公版人物画，并配以不同的底色、边框和材质处理，包括镭射、石纹、金属、树皮与流动质感。
+
+未解锁的风格显示锁标，可先预览全部 78 张牌，再通过底部按钮打开扫码弹窗，输入内部码解锁。已拥有的风格不显示锁标，点击后立即应用，当前使用的风格显示亮星。
 
 完整名称与接入说明见 [`docs/DECKS.md`](docs/DECKS.md)。
 
 ---
 
-## 免费部署
+## 云端部署
 
-推荐的零成本组合：
+推荐组合：
 
-- Render Free：运行后端
-- Neon Free Postgres：保存账号、Session、API Key
-- EmailJS Free：发送 QQ 邮箱验证码
+- Render 基础实例：运行后端
+- Neon 基础 Postgres：保存账号、Session、API Key
+- EmailJS 基础方案：发送 QQ 邮箱验证码
 
 不需要买域名，也不需要买服务器。Render 会提供 `https://xxx.onrender.com` 地址。
 
-Render 免费实例不能挂持久磁盘，并且封锁 SMTP 端口，所以不能直接使用 SQLite 和 QQ SMTP。当前代码已经支持 Postgres 和 EmailJS 的 HTTPS API。
+Render 基础实例不能挂持久磁盘，并且封锁 SMTP 端口，所以不能直接使用 SQLite 和 QQ SMTP。当前代码已经支持 Postgres 和 EmailJS 的 HTTPS API。
 
 完整步骤见 [`docs/DEPLOY.md`](docs/DEPLOY.md)。
 
-### 免费方案限制
+### 基础方案限制
 
-- Render 免费实例闲置后休眠，首次请求可能等待 30–60 秒
-- Neon 免费项目会自动挂起，首次请求需要唤醒
-- EmailJS 免费额度约 200 封/月
+- Render 基础实例闲置后休眠，首次请求可能等待 30–60 秒
+- Neon 基础项目会自动挂起，首次请求需要唤醒
+- EmailJS 基础额度约 200 封/月
 - 适合小范围使用，不适合大量公开用户
 
 ---
@@ -217,7 +215,7 @@ adb install -r dist/arcana-0.4.0-debug.apk
 SHA256：
 
 ```text
-BD5471A0F2944EE8CBE8B2A52BB8779FA736514AC08B1807E4B8709996306582
+844703AA985606AD4CB75DA095B5C6C7E7A89B5FC0CCFCADD6A9FC13BA02A395
 ```
 
 如果安装过更早的测试包并提示签名冲突，先卸载旧版。
@@ -291,8 +289,8 @@ npm test
 
 ## 文档
 
-- [`docs/DEPLOY.md`](docs/DEPLOY.md)：免费部署完整步骤
+- [`docs/DEPLOY.md`](docs/DEPLOY.md)：云端部署完整步骤
 - [`docs/ANDROID.md`](docs/ANDROID.md)：APK 构建、安装、签名
 - [`docs/PROVIDERS.md`](docs/PROVIDERS.md)：服务商与模型
-- [`docs/DECKS.md`](docs/DECKS.md)：牌面风格与邀请码
+- [`docs/DECKS.md`](docs/DECKS.md)：牌面风格与内部码
 - [`PRIVACY.md`](PRIVACY.md)：隐私说明
