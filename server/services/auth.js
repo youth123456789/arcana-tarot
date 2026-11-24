@@ -23,6 +23,7 @@ function publicUser(user) {
   return {
     id: Number(user.id),
     email: user.email,
+    avatar: user.avatar || '',
     createdAt: Number(user.created_at),
     lastLoginAt: user.last_login_at ? Number(user.last_login_at) : null
   };
@@ -125,6 +126,13 @@ async function verifyCode(db, config, emailValue, codeValue) {
   });
 }
 
+async function updateAvatar(db, userId, avatar) {
+  await db.execute('UPDATE users SET avatar = ? WHERE id = ?', [avatar, userId]);
+  const user = await db.one('SELECT * FROM users WHERE id = ?', [userId]);
+  if (!user) return null;
+  return publicUser(user);
+}
+
 async function getUserByToken(db, token) {
   if (!token) return null;
   const row = await db.one(
@@ -151,6 +159,7 @@ module.exports = {
   requestCode,
   verifyCode,
   getUserByToken,
+  updateAvatar,
   revokeSession,
   publicUser
 };

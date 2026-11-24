@@ -160,7 +160,7 @@ adb install -r dist/arcana-0.4.0-debug.apk
 
 SHA256锛?
 ```text
-8839BDF878CBCCA2CFED04689C7034117CD7F8076272801B53DEB0063766683B
+0887E6D1468815B1774F01EBA5AFAFC939F78D395680CCC85ACB34A707E747EC
 ```
 
 濡傛灉瀹夎杩囨洿鏃╃殑娴嬭瘯鍖呭苟鎻愮ず绛惧悕鍐茬獊锛屽厛鍗歌浇鏃х増銆?
@@ -231,3 +231,4 @@ npm test
 ## 鏂囨。
 
 - [`docs/DEPLOY.md`](docs/DEPLOY.md)锛氬厤璐归儴缃插畬鏁存楠?- [`docs/ANDROID.md`](docs/ANDROID.md)锛欰PK 鏋勫缓銆佸畨瑁呫€佺鍚?- [`docs/PROVIDERS.md`](docs/PROVIDERS.md)锛氭湇鍔″晢涓庢ā鍨?- [`PRIVACY.md`](PRIVACY.md)锛氶殣绉佽鏄?
+

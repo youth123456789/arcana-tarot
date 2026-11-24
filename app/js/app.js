@@ -113,6 +113,8 @@
     keyBusy: '',
     keyError: '',
     profileView: 'main',
+    avatarPickerOpen: false,
+    avatarBusy: false,
     thinkingStartedAt: 0,
     thinkingSeconds: 0,
     thinkingFinished: false,
@@ -1703,12 +1705,121 @@
     return state.authKeys.filter(function (key) { return key.starred; })[0] || null;
   }
 
+  var AVATAR_PRESETS = [
+    { id: 'moon', label: '月', svg: '<path d="M20.2 14.6A7.6 7.6 0 0 1 9.4 3.8a8.3 8.3 0 1 0 10.8 10.8z"></path>' },
+    { id: 'star', label: '星', svg: '<path d="M12 2.5l2.9 6 6.6.9-4.8 4.7 1.2 6.6-5.9-3.1-5.9 3.1 1.2-6.6-4.8-4.7 6.6-.9z"></path>' },
+    { id: 'sun', label: '日', svg: '<circle cx="12" cy="12" r="3.5"></circle><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"></path>' },
+    { id: 'eye', label: '瞳', svg: '<path d="M2.5 12s3.5-5.5 9.5-5.5S21.5 12 21.5 12s-3.5 5.5-9.5 5.5S2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle>' },
+    { id: 'key', label: '钥', svg: '<circle cx="8" cy="8" r="3.2"></circle><path d="M10.3 10.3L20 20M15 15l2-2M17.5 17.5l2-2"></path>' },
+    { id: 'chalice', label: '杯', svg: '<path d="M7 3.5h10v4a5 5 0 0 1-10 0zM12 12.5v6M8.5 20.5h7"></path>' },
+    { id: 'tower', label: '塔', svg: '<path d="M6 21V8l6-4 6 4v13zM9 21v-5h6v5M9.5 9.5h1M13.5 9.5h1"></path>' },
+    { id: 'flame', label: '焰', svg: '<path d="M12 21c4 0 6-2.6 6-6 0-4.3-3.5-6.2-4.4-10.5-2 1.8-3 4-3 5.8-1-1-1.7-2.2-2-3.8C6.8 8.7 6 11 6 15c0 3.4 2 6 6 6z"></path>' }
+  ];
+
+  function avatarPreset(id) {
+    return AVATAR_PRESETS.filter(function (item) { return item.id === id; })[0] || null;
+  }
+
+  function avatarMarkup(value, fallback) {
+    var raw = String(value || '');
+    if (!raw) raw = 'preset:moon';
+    if (raw.indexOf('data:image/') === 0) {
+      return '<span class="user-avatar user-avatar--image"><img src="' + escapeHTML(raw) + '" alt="用户头像"></span>';
+    }
+    if (raw.indexOf('preset:') === 0) {
+      var preset = avatarPreset(raw.slice(7));
+      if (preset) {
+        return '<span class="user-avatar avatar--' + preset.id + '" aria-label="' + preset.label + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + preset.svg + '</svg>' +
+        '</span>';
+      }
+    }
+    var letter = String(fallback || '?').slice(0, 1).toUpperCase();
+    return '<span class="user-avatar user-avatar--fallback">' + escapeHTML(letter) + '</span>';
+  }
+
+  function renderAvatarPicker() {
+    var actual = state.authUser ? state.authUser.avatar : '';
+    var current = actual || 'preset:moon';
+    var choices = AVATAR_PRESETS.map(function (preset) {
+      var value = 'preset:' + preset.id;
+      return '<button class="avatar-choice' + (current === value ? ' is-selected' : '') + '" type="button" data-action="set-avatar" data-avatar="' + value + '" aria-label="使用' + preset.label + '头像">' +
+        avatarMarkup(value, preset.label) +
+      '</button>';
+    }).join('');
+    return '<div class="avatar-picker">' +
+      '<div class="avatar-picker__grid">' + choices + '</div>' +
+      '<label class="avatar-upload">' +
+        '<input id="avatarUpload" type="file" accept="image/png,image/jpeg,image/webp">' +
+        '<span>' + (state.avatarBusy ? '处理中…' : '上传自己的图片') + '</span>' +
+      '</label>' +
+      (actual ? '<button class="text-btn avatar-picker__clear" type="button" data-action="set-avatar" data-avatar="">恢复默认</button>' : '') +
+    '</div>';
+  }
+
   function updateProfileButton() {
     if (!profileButton) return;
     var avatar = document.getElementById('profileAvatar');
     var dot = document.getElementById('profileDot');
-    if (avatar) avatar.innerHTML = state.authUser ? escapeHTML(state.authUser.email.slice(0, 1).toUpperCase()) : personIcon();
+    if (avatar) avatar.innerHTML = state.authUser ? avatarMarkup(state.authUser.avatar, state.authUser.email.slice(0, 1)) : personIcon();
     if (dot) dot.hidden = !activeKey();
+  }
+
+  async function setAvatar(value) {
+    if (!state.authUser || state.avatarBusy) return;
+    state.avatarBusy = true;
+    state.avatarPickerOpen = true;
+    renderProfile();
+    try {
+      var result = await ArcanaAPI.updateAvatar(value);
+      state.authUser = result.user;
+      state.avatarPickerOpen = false;
+      state.avatarBusy = false;
+      renderProfile();
+      showToast(value ? '头像已更新' : '已恢复默认头像');
+    } catch (error) {
+      state.avatarBusy = false;
+      renderProfile();
+      showToast(error.message || '头像保存失败，请重试。');
+    }
+  }
+
+  function handleAvatarFile(file) {
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
+      showToast('请选择 PNG、JPG 或 WebP 图片。');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('图片不要超过 5MB。');
+      return;
+    }
+    var objectUrl = URL.createObjectURL(file);
+    var image = new Image();
+    image.onload = function () {
+      var size = 256;
+      var canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      var context = canvas.getContext('2d');
+      var scale = Math.max(size / image.width, size / image.height);
+      var width = Math.round(image.width * scale);
+      var height = Math.round(image.height * scale);
+      context.drawImage(image, Math.round((size - width) / 2), Math.round((size - height) / 2), width, height);
+      URL.revokeObjectURL(objectUrl);
+      var data = canvas.toDataURL('image/jpeg', 0.82);
+      if (data.length > 60000) data = canvas.toDataURL('image/jpeg', 0.68);
+      if (data.length > 60000) {
+        showToast('图片压缩后仍然太大，请换一张。');
+        return;
+      }
+      setAvatar(data);
+    };
+    image.onerror = function () {
+      URL.revokeObjectURL(objectUrl);
+      showToast('图片读取失败，请换一张。');
+    };
+    image.src = objectUrl;
   }
 
   function closeProfile() {
@@ -1922,9 +2033,11 @@
   function renderAccountContent() {
     if (!state.authUser) return renderAuthPanel();
     var email = escapeHTML(state.authUser.email);
-    var initial = escapeHTML(state.authUser.email.slice(0, 1).toUpperCase());
+    var avatar = avatarMarkup(state.authUser.avatar, state.authUser.email.slice(0, 1));
     return '<div class="account-detail">' +
-      '<div class="account-detail__avatar">' + initial + '</div>' +
+      '<button class="account-detail__avatar" type="button" data-action="toggle-avatar-picker" aria-label="更换头像">' + avatar + '</button>' +
+      '<button class="text-btn account-detail__change" type="button" data-action="toggle-avatar-picker">更换头像</button>' +
+      (state.avatarPickerOpen ? renderAvatarPicker() : '') +
       '<p class="eyebrow"><span class="eyebrow__line"></span>BOUND EMAIL</p>' +
       '<h3>QQ 邮箱已绑定</h3>' +
       '<p class="account-detail__email">' + email + '</p>' +
@@ -2250,6 +2363,9 @@
       state.keyFormCustom = '';
       state.keyError = '';
       renderProfile();
+    } else if (target.id === 'avatarUpload') {
+      var file = target.files && target.files[0];
+      if (file) handleAvatarFile(file);
     } else if (target.id === 'keyModel') {
       state.keyFormModel = target.value;
       if (target.value !== '__custom') state.keyFormCustom = '';
@@ -2378,6 +2494,15 @@
     }
     if (action === 'cancel-edit-key') {
       cancelEditKey();
+      return;
+    }
+    if (action === 'toggle-avatar-picker') {
+      state.avatarPickerOpen = !state.avatarPickerOpen;
+      renderProfile();
+      return;
+    }
+    if (action === 'set-avatar') {
+      setAvatar(element ? element.getAttribute('data-avatar') || '' : '');
       return;
     }
     if (action === 'open-api-settings') {

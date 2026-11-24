@@ -11,6 +11,7 @@ const SQLITE_SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
+    avatar TEXT,
     created_at INTEGER NOT NULL,
     last_login_at INTEGER
   );
@@ -57,6 +58,7 @@ const POSTGRES_SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
+    avatar TEXT,
     created_at BIGINT NOT NULL,
     last_login_at BIGINT
   );
@@ -97,6 +99,8 @@ const POSTGRES_SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys (user_id, created_at DESC);
   CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_one_star
     ON api_keys (user_id) WHERE starred = 1;
+
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
 `;
 
 function isPostgresTarget(target) {
@@ -118,6 +122,10 @@ function createSqliteAdapter(filename) {
   }
   const raw = new DatabaseSync(filename);
   raw.exec(SQLITE_SCHEMA);
+  const userColumns = raw.prepare('PRAGMA table_info(users)').all();
+  if (!userColumns.some((column) => column.name === 'avatar')) {
+    raw.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
+  }
 
   const adapter = {
     kind: 'sqlite',

@@ -111,6 +111,11 @@
     return data;
   }
 
+  async function updateAvatar(avatar) {
+    requireToken();
+    return request('/api/auth/avatar', { method: 'PUT', body: { avatar: avatar } });
+  }
+
   async function me() {
     requireToken();
     return request('/api/auth/me');
@@ -171,6 +176,7 @@
     requestCode: requestCode,
     verifyCode: verifyCode,
     me: me,
+    updateAvatar: updateAvatar,
     logout: logout,
     providers: providers,
     listKeys: listKeys,

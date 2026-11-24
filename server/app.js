@@ -43,7 +43,7 @@ async function createApp(config, dependencies = {}) {
     next();
   });
 
-  app.use(express.json({ limit: '64kb' }));
+  app.use(express.json({ limit: '128kb' }));
 
   app.get('/api/health', (request, response) => {
     response.set('Cache-Control', 'no-store');

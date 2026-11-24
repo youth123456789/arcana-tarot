@@ -171,6 +171,16 @@ test('account, API keys and starred reading work end to end', async (t) => {
   assert.equal(me.response.status, 200);
   assert.equal(me.data.user.email, 'tarot@qq.com');
 
+  const avatar = await request(app.baseUrl, 'PUT', '/api/auth/avatar', { avatar: 'preset:moon' }, token);
+  assert.equal(avatar.response.status, 200);
+  assert.equal(avatar.data.user.avatar, 'preset:moon');
+
+  const meWithAvatar = await request(app.baseUrl, 'GET', '/api/auth/me', undefined, token);
+  assert.equal(meWithAvatar.data.user.avatar, 'preset:moon');
+
+  const badAvatar = await request(app.baseUrl, 'PUT', '/api/auth/avatar', { avatar: 'javascript:alert(1)' }, token);
+  assert.equal(badAvatar.response.status, 422);
+
   const providers = await request(app.baseUrl, 'GET', '/api/keys/providers');
   assert.equal(providers.response.status, 200);
   assert.ok(providers.data.providers.some((provider) => provider.id === 'deepseek'));

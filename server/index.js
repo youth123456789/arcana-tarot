@@ -12,7 +12,7 @@ async function main() {
     console.info(`ARCANA listening on http://${address}:${config.port}`);
     console.info(`Auth: QQ email code · Mail: ${config.mail.mode} · DB: ${app.locals.db.kind === 'postgres' ? 'postgres' : config.dbPath}`);
     if (config.mail.mode === 'console') {
-      console.warn('MAIL_MODE=console: verification codes are printed to this server console. Use brevo for Render free, or smtp for a VPS.');
+      console.warn('MAIL_MODE=console: verification codes are printed to this server console. Use emailjs for Render free, or smtp for a VPS.');
     }
   });
 
