@@ -146,8 +146,7 @@ function loadConfig() {
     deck: {
       price: decimalFromEnv('DECK_PRICE', 9.9),
       paymentQrUrl: String(process.env.DECK_PAYMENT_QR_URL || '').trim(),
-      inviteCodes,
-      inviteMaxUses: numberFromEnv('DECK_INVITE_MAX_USES', 100)
+      inviteCodes
     }
   };
 }

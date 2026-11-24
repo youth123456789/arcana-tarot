@@ -66,11 +66,12 @@ const SQLITE_SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     deck_id TEXT NOT NULL,
     code_hash TEXT NOT NULL UNIQUE,
-    max_uses INTEGER NOT NULL DEFAULT 100,
+    max_uses INTEGER NOT NULL DEFAULT 0,
     used_count INTEGER NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL
   );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_deck_invite_one_code ON deck_invite_codes (deck_id);
 `;
 
 const POSTGRES_SCHEMA = `
@@ -132,11 +133,12 @@ const POSTGRES_SCHEMA = `
     id BIGSERIAL PRIMARY KEY,
     deck_id TEXT NOT NULL,
     code_hash TEXT NOT NULL UNIQUE,
-    max_uses INTEGER NOT NULL DEFAULT 100,
+    max_uses INTEGER NOT NULL DEFAULT 0,
     used_count INTEGER NOT NULL DEFAULT 0,
     active SMALLINT NOT NULL DEFAULT 1,
     created_at BIGINT NOT NULL
   );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_deck_invite_one_code ON deck_invite_codes (deck_id);
 
   ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS deck_style TEXT NOT NULL DEFAULT 'rider';

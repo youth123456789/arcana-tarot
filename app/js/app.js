@@ -2375,7 +2375,7 @@
     }).join('');
     return '<div class="deck-intro"><p class="eyebrow"><span class="eyebrow__line"></span>TAROT ATELIER</p><p>每种牌面都是一套独立的视觉语言，牌义与牌阵保持一致。点击牌面预览，选择你此刻想使用的版本。</p></div>' +
       '<div class="deck-gallery">' + cards + '</div>' +
-      '<p class="key-form__hint">默认使用韦特经典。其他牌面 ¥9.9/套，可使用对应邀请码解锁；当前为前端预览，支付与邀请码校验将在后端接入。</p>';
+      '<p class="key-form__hint">默认使用韦特经典。其他牌面可使用对应内部码解锁；解锁状态会同步到账号。</p>';
   }
 
   function lockIcon() {
@@ -2405,8 +2405,8 @@
         : '<span>收款码</span><small>作者尚未配置</small>';
       action = '<div class="deck-purchase">' +
         '<div class="deck-purchase__qr">' + qr + '</div>' +
-        '<div class="deck-purchase__copy"><strong>¥' + amount + ' 解锁「' + escapeHTML(style.name) + '」</strong><p>扫码支付后向作者索取专属邀请码；输入邀请码即可解锁。</p></div>' +
-        '<div class="deck-purchase__code"><input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入邀请码" value="' + escapeHTML(state.deckInvite) + '"><button class="text-btn" type="button" data-action="unlock-deck"' + (state.deckBusy ? ' disabled' : '') + '>验证</button></div>' +
+        '<div class="deck-purchase__copy"><strong>¥' + amount + ' 解锁「' + escapeHTML(style.name) + '」</strong><p>扫码支付后向作者索取该风格的内部码；输入内部码即可解锁。</p></div>' +
+        '<div class="deck-purchase__code"><input id="deckInvite" type="text" autocomplete="off" spellcheck="false" placeholder="输入内部码" value="' + escapeHTML(state.deckInvite) + '"><button class="text-btn" type="button" data-action="unlock-deck"' + (state.deckBusy ? ' disabled' : '') + '>验证</button></div>' +
         (state.deckInviteError ? '<p class="profile-error">' + escapeHTML(state.deckInviteError) + '</p>' : '') +
       '</div>';
     } else {
@@ -2474,7 +2474,7 @@
     if (input) state.deckInvite = input.value;
     var code = String(state.deckInvite || '').trim();
     if (!code) {
-      state.deckInviteError = '请输入邀请码。';
+      state.deckInviteError = '请输入内部码。';
       renderProfile();
       return;
     }
@@ -2497,7 +2497,7 @@
       showToast('「' + style.name + '」已解锁');
     } catch (error) {
       state.deckBusy = false;
-      state.deckInviteError = error.message || '邀请码验证失败。';
+      state.deckInviteError = error.message || '内部码验证失败。';
       renderProfile();
     }
   }

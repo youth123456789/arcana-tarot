@@ -22,8 +22,8 @@ async function ensureDeckInviteCodes(db, config) {
     if (!deckExists(deckId) || !code) continue;
     await db.execute(
       'INSERT INTO deck_invite_codes (deck_id, code_hash, max_uses, used_count, active, created_at) ' +
-      'VALUES (?, ?, ?, 0, 1, ?) ON CONFLICT(code_hash) DO NOTHING',
-      [deckId, deckCodeHash(deckId, code, config.appSecret), deckConfig.inviteMaxUses || 100, now]
+      'VALUES (?, ?, 0, 0, 1, ?) ON CONFLICT(deck_id) DO UPDATE SET code_hash = excluded.code_hash, max_uses = 0, active = 1',
+      [deckId, deckCodeHash(deckId, code, config.appSecret), now]
     );
   }
 }
@@ -61,26 +61,17 @@ async function unlockDeck(db, config, userId, deckId, rawCode) {
   }
 
   const code = String(rawCode || '').trim().toUpperCase();
-  if (!code) throw new HttpError(422, 'DECK_CODE_REQUIRED', '请输入邀请码。');
+  if (!code) throw new HttpError(422, 'DECK_CODE_REQUIRED', '请输入内部码。');
 
   const codeHash = deckCodeHash(deckId, code, config.appSecret);
   const row = await db.one(
     'SELECT * FROM deck_invite_codes WHERE deck_id = ? AND code_hash = ? AND active = 1',
     [deckId, codeHash]
   );
-  if (!row) throw new HttpError(422, 'DECK_CODE_INVALID', '邀请码不正确。');
-  if (Number(row.max_uses) > 0 && Number(row.used_count) >= Number(row.max_uses)) {
-    throw new HttpError(422, 'DECK_CODE_USED', '这个邀请码已经达到使用上限。');
-  }
+  if (!row) throw new HttpError(422, 'DECK_CODE_INVALID', '内部码不正确。');
 
   await db.transaction(async (tx) => {
-    const updated = await tx.execute(
-      'UPDATE deck_invite_codes SET used_count = used_count + 1 WHERE id = ? AND (max_uses = 0 OR used_count < max_uses)',
-      [row.id]
-    );
-    if (updated.rowCount === 0) {
-      throw new HttpError(422, 'DECK_CODE_USED', '这个邀请码已经达到使用上限。');
-    }
+    await tx.execute('UPDATE deck_invite_codes SET used_count = used_count + 1 WHERE id = ?', [row.id]);
     await tx.execute(
       'INSERT INTO deck_entitlements (user_id, deck_id, source, created_at) VALUES (?, ?, ?, ?) ' +
       'ON CONFLICT(user_id, deck_id) DO NOTHING',
